@@ -1,4 +1,3 @@
-// entity/refresh_token.go
 package entity
 
 import (
