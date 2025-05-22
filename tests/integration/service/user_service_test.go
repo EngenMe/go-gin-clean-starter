@@ -3,64 +3,70 @@ package service_test
 import (
 	"context"
 	"errors"
-	"github.com/Caknoooo/go-gin-clean-starter/constants"
-	"github.com/Caknoooo/go-gin-clean-starter/helpers"
-	"github.com/Caknoooo/go-gin-clean-starter/service"
-	"github.com/golang-jwt/jwt/v4"
 	"gorm.io/gorm"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/Caknoooo/go-gin-clean-starter/dto"
-	"github.com/Caknoooo/go-gin-clean-starter/entity"
-	"github.com/Caknoooo/go-gin-clean-starter/repository"
-	"github.com/Caknoooo/go-gin-clean-starter/tests/integration/container"
-	"github.com/Caknoooo/go-gin-clean-starter/utils"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"gopkg.in/gomail.v2"
+
+	"github.com/Caknoooo/go-gin-clean-starter/constants"
+	"github.com/Caknoooo/go-gin-clean-starter/dto"
+	"github.com/Caknoooo/go-gin-clean-starter/entity"
+	"github.com/Caknoooo/go-gin-clean-starter/helpers"
+	"github.com/Caknoooo/go-gin-clean-starter/repository"
+	"github.com/Caknoooo/go-gin-clean-starter/service"
+	"github.com/Caknoooo/go-gin-clean-starter/tests/integration/container"
+	"github.com/Caknoooo/go-gin-clean-starter/utils"
 )
 
-// MockJWTService for testing
+// MockJWTService is a mock implementation of a JWT service for testing purposes. It embeds the mock.Mock type.
 type MockJWTService struct {
 	mock.Mock
 }
 
+// GenerateAccessToken generates a mock access token for a given user ID and role, typically for testing purposes.
 func (m *MockJWTService) GenerateAccessToken(userID, role string) string {
 	args := m.Called(userID, role)
 	return args.String(0)
 }
 
+// GenerateRefreshToken generates a mock refresh token and its expiration time, primarily for testing purposes.
 func (m *MockJWTService) GenerateRefreshToken() (string, time.Time) {
 	args := m.Called()
 	return args.String(0), args.Get(1).(time.Time)
 }
 
+// ValidateToken validates the provided JWT token and returns the parsed token and any associated error.
 func (m *MockJWTService) ValidateToken(token string) (*jwt.Token, error) {
 	args := m.Called(token)
 	return args.Get(0).(*jwt.Token), args.Error(1)
 }
 
+// GetUserIDByToken retrieves the user ID associated with the given token, returning an error if the operation fails.
 func (m *MockJWTService) GetUserIDByToken(token string) (string, error) {
 	args := m.Called(token)
 	return args.String(0), args.Error(1)
 }
 
-// MockDialer for email sending
+// MockDialer is a mock implementation of a dialer for testing email sending functionality.
 type MockDialer struct {
 	mock.Mock
 }
 
+// DialAndSend mocks the process of dialing and sending emails using the provided message objects.
 func (m *MockDialer) DialAndSend(messages ...*gomail.Message) error {
 	args := m.Called(messages)
 	return args.Error(0)
 }
 
+// TestUserService_Register tests the user registration process, ensuring proper handling of valid and conflicting inputs.
 func TestUserService_Register(t *testing.T) {
-	// Start test container
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -70,7 +76,6 @@ func TestUserService_Register(t *testing.T) {
 		}
 	}(dbContainer)
 
-	// Set environment variables for database connection
 	err = os.Setenv("DB_HOST", dbContainer.Host)
 	if err != nil {
 		panic(err)
@@ -105,7 +110,6 @@ func TestUserService_Register(t *testing.T) {
 		panic(err)
 	}
 
-	// Setup database connection
 	db := container.SetUpDatabaseConnection()
 	defer func(db *gorm.DB) {
 		err := container.CloseDatabaseConnection(db)
@@ -114,21 +118,16 @@ func TestUserService_Register(t *testing.T) {
 		}
 	}(db)
 
-	// Migrate database schema
 	err = db.AutoMigrate(&entity.User{}, &entity.RefreshToken{})
 	assert.NoError(t, err)
 
-	// Initialize repositories
 	userRepo := repository.NewUserRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 
-	// Mock JWT service
 	jwtService := &MockJWTService{}
 
-	// Create user service
 	userService := service.NewUserService(userRepo, refreshTokenRepo, jwtService, db)
 
-	// Create temporary email template file
 	tempDir := t.TempDir()
 	emailTemplatePath := filepath.Join(tempDir, "base_mail.html")
 	err = os.WriteFile(
@@ -143,7 +142,6 @@ func TestUserService_Register(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	// Mock email sending by overriding newDialer
 	originalNewDialer := utils.NewDialer
 	utils.NewDialer = func(host string, port int, username, password string) utils.Dialer {
 		dialer := &MockDialer{}
@@ -152,12 +150,10 @@ func TestUserService_Register(t *testing.T) {
 	}
 	defer func() { utils.NewDialer = originalNewDialer }()
 
-	// Mock UploadFile
 	originalPath := utils.PATH
 	utils.PATH = tempDir
 	defer func() { utils.PATH = originalPath }()
 
-	// Test cases
 	tests := []struct {
 		name          string
 		input         dto.UserCreateRequest
@@ -183,7 +179,6 @@ func TestUserService_Register(t *testing.T) {
 				assert.Equal(t, constants.ENUM_ROLE_USER, user.Role)
 				assert.False(t, user.IsVerified)
 
-				// Verify user exists in database
 				var dbUser entity.User
 				err := db.Where("email = ?", user.Email).First(&dbUser).Error
 				assert.NoError(t, err)
@@ -200,7 +195,6 @@ func TestUserService_Register(t *testing.T) {
 				TelpNumber: "0987654321",
 			},
 			setup: func() {
-				// Create existing user
 				existingUser := entity.User{
 					ID:         uuid.New(),
 					Name:       "Existing User",
@@ -221,16 +215,12 @@ func TestUserService_Register(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				// Clean database before each test
 				db.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
 
-				// Run setup
 				tt.setup()
 
-				// Execute registration
 				user, err := userService.Register(context.Background(), tt.input)
 
-				// Validate results
 				if tt.expectedError != nil {
 					assert.Error(t, err)
 					assert.Equal(t, tt.expectedError, err)
@@ -238,13 +228,13 @@ func TestUserService_Register(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				// Validate user response
 				tt.validateUser(t, user)
 			},
 		)
 	}
 }
 
+// TestUserService_GetAllUserWithPagination tests the retrieval of users with pagination and optional search functionality.
 func TestUserService_GetAllUserWithPagination(t *testing.T) {
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
@@ -255,7 +245,6 @@ func TestUserService_GetAllUserWithPagination(t *testing.T) {
 		}
 	}(dbContainer)
 
-	// Set environment variables for database connection
 	err = os.Setenv("DB_HOST", dbContainer.Host)
 	if err != nil {
 		panic(err)
@@ -290,7 +279,6 @@ func TestUserService_GetAllUserWithPagination(t *testing.T) {
 		panic(err)
 	}
 
-	// Setup database connection
 	db := container.SetUpDatabaseConnection()
 	defer func(db *gorm.DB) {
 		err := container.CloseDatabaseConnection(db)
@@ -299,7 +287,6 @@ func TestUserService_GetAllUserWithPagination(t *testing.T) {
 		}
 	}(db)
 
-	// Migrate database schema
 	err = db.AutoMigrate(&entity.User{}, &entity.RefreshToken{})
 	assert.NoError(t, err)
 
@@ -308,12 +295,10 @@ func TestUserService_GetAllUserWithPagination(t *testing.T) {
 	jwtService := service.NewJWTService()
 	userService := service.NewUserService(userRepo, refreshTokenRepo, jwtService, db)
 
-	// Clean up database after test
 	defer func() {
 		db.Exec("DELETE FROM users WHERE TRUE")
 	}()
 
-	// Create test users
 	ctx := context.Background()
 	testUsers := []entity.User{
 		{
@@ -432,7 +417,6 @@ func TestUserService_GetAllUserWithPagination(t *testing.T) {
 				assert.Equal(t, tt.req.Page, result.Page)
 				assert.Equal(t, tt.req.PerPage, result.PerPage)
 
-				// Verify that the returned users match our test data
 				for _, user := range result.Data {
 					found := false
 					for _, testUser := range testUsers {
@@ -451,8 +435,8 @@ func TestUserService_GetAllUserWithPagination(t *testing.T) {
 	}
 }
 
+// TestUserService_GetUserById tests the functionality of retrieving a user by their ID using the GetUserById service method.
 func TestUserService_GetUserById(t *testing.T) {
-	// Start test container
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -462,7 +446,6 @@ func TestUserService_GetUserById(t *testing.T) {
 		}
 	}(dbContainer)
 
-	// Set environment variables for database connection
 	err = os.Setenv("DB_HOST", dbContainer.Host)
 	if err != nil {
 		panic(err)
@@ -484,7 +467,6 @@ func TestUserService_GetUserById(t *testing.T) {
 		panic(err)
 	}
 
-	// Setup database connection
 	db := container.SetUpDatabaseConnection()
 	defer func(db *gorm.DB) {
 		err := container.CloseDatabaseConnection(db)
@@ -493,37 +475,30 @@ func TestUserService_GetUserById(t *testing.T) {
 		}
 	}(db)
 
-	// Migrate database schema
 	err = db.AutoMigrate(&entity.User{}, &entity.RefreshToken{})
 	assert.NoError(t, err)
 
-	// Initialize repositories
 	userRepo := repository.NewUserRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 	jwtService := service.NewJWTService()
 
-	// Create user service
 	userService := service.NewUserService(userRepo, refreshTokenRepo, jwtService, db)
 
-	// Clean up database after test
 	defer func() {
 		db.Exec("DELETE FROM users WHERE TRUE")
 	}()
 
-	// Create test context
 	ctx := context.Background()
 
-	// Test cases
 	tests := []struct {
 		name          string
-		setup         func() string // returns user ID
+		setup         func() string
 		expectedError error
 		validate      func(t *testing.T, user dto.UserResponse)
 	}{
 		{
 			name: "Successfully get user by ID",
 			setup: func() string {
-				// Create test user
 				user := entity.User{
 					Name:       "Test User",
 					Email:      "test@example.com",
@@ -549,7 +524,7 @@ func TestUserService_GetUserById(t *testing.T) {
 		{
 			name: "User not found",
 			setup: func() string {
-				return uuid.New().String() // non-existent ID
+				return uuid.New().String()
 			},
 			expectedError: dto.ErrGetUserById,
 			validate: func(t *testing.T, user dto.UserResponse) {
@@ -571,16 +546,12 @@ func TestUserService_GetUserById(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				// Clean database before each test
 				db.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
 
-				// Setup test data and get user ID
 				userId := tt.setup()
 
-				// Execute the function
 				user, err := userService.GetUserById(ctx, userId)
 
-				// Validate results
 				if tt.expectedError != nil {
 					assert.Error(t, err)
 					assert.Equal(t, tt.expectedError, err)
@@ -588,15 +559,14 @@ func TestUserService_GetUserById(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				// Validate user response
 				tt.validate(t, user)
 			},
 		)
 	}
 }
 
+// TestUserService_GetUserByEmail tests the UserService GetUserByEmail method for various scenarios such as success and error cases.
 func TestUserService_GetUserByEmail(t *testing.T) {
-	// Start test container
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -606,7 +576,6 @@ func TestUserService_GetUserByEmail(t *testing.T) {
 		}
 	}(dbContainer)
 
-	// Set environment variables for database connection
 	err = os.Setenv("DB_HOST", dbContainer.Host)
 	if err != nil {
 		panic(err)
@@ -628,7 +597,6 @@ func TestUserService_GetUserByEmail(t *testing.T) {
 		panic(err)
 	}
 
-	// Setup database connection
 	db := container.SetUpDatabaseConnection()
 	defer func(db *gorm.DB) {
 		err := container.CloseDatabaseConnection(db)
@@ -637,37 +605,30 @@ func TestUserService_GetUserByEmail(t *testing.T) {
 		}
 	}(db)
 
-	// Migrate database schema
 	err = db.AutoMigrate(&entity.User{}, &entity.RefreshToken{})
 	assert.NoError(t, err)
 
-	// Initialize repositories
 	userRepo := repository.NewUserRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 	jwtService := service.NewJWTService()
 
-	// Create user service
 	userService := service.NewUserService(userRepo, refreshTokenRepo, jwtService, db)
 
-	// Clean up database after test
 	defer func() {
 		db.Exec("DELETE FROM users WHERE TRUE")
 	}()
 
-	// Create test context
 	ctx := context.Background()
 
-	// Test cases
 	tests := []struct {
 		name          string
-		setup         func() string // returns email to test
+		setup         func() string
 		expectedError error
 		validate      func(t *testing.T, user dto.UserResponse)
 	}{
 		{
 			name: "Successfully get user by email",
 			setup: func() string {
-				// Create test user
 				user := entity.User{
 					Name:       "Test User",
 					Email:      "test@example.com",
@@ -693,7 +654,7 @@ func TestUserService_GetUserByEmail(t *testing.T) {
 		{
 			name: "User not found by email",
 			setup: func() string {
-				return "nonexistent@example.com" // non-existent email
+				return "nonexistent@example.com"
 			},
 			expectedError: dto.ErrGetUserByEmail,
 			validate: func(t *testing.T, user dto.UserResponse) {
@@ -703,7 +664,7 @@ func TestUserService_GetUserByEmail(t *testing.T) {
 		{
 			name: "Empty email",
 			setup: func() string {
-				return "" // empty email
+				return ""
 			},
 			expectedError: dto.ErrGetUserByEmail,
 			validate: func(t *testing.T, user dto.UserResponse) {
@@ -715,16 +676,12 @@ func TestUserService_GetUserByEmail(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				// Clean database before each test
 				db.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
 
-				// Setup test data and get email
 				email := tt.setup()
 
-				// Execute the function
 				user, err := userService.GetUserByEmail(ctx, email)
 
-				// Validate results
 				if tt.expectedError != nil {
 					assert.Error(t, err)
 					assert.Equal(t, tt.expectedError, err)
@@ -732,15 +689,14 @@ func TestUserService_GetUserByEmail(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				// Validate user response
 				tt.validate(t, user)
 			},
 		)
 	}
 }
 
+// TestUserService_SendVerificationEmail tests the UserService.SendVerificationEmail method with different scenarios and validations.
 func TestUserService_SendVerificationEmail(t *testing.T) {
-	// Start test container
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -750,7 +706,6 @@ func TestUserService_SendVerificationEmail(t *testing.T) {
 		}
 	}(dbContainer)
 
-	// Set environment variables for database connection
 	err = os.Setenv("DB_HOST", dbContainer.Host)
 	if err != nil {
 		panic(err)
@@ -772,7 +727,6 @@ func TestUserService_SendVerificationEmail(t *testing.T) {
 		panic(err)
 	}
 
-	// Setup database connection
 	db := container.SetUpDatabaseConnection()
 	defer func(db *gorm.DB) {
 		err := container.CloseDatabaseConnection(db)
@@ -781,19 +735,15 @@ func TestUserService_SendVerificationEmail(t *testing.T) {
 		}
 	}(db)
 
-	// Migrate database schema
 	err = db.AutoMigrate(&entity.User{}, &entity.RefreshToken{})
 	assert.NoError(t, err)
 
-	// Initialize repositories
 	userRepo := repository.NewUserRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 	jwtService := service.NewJWTService()
 
-	// Create user service
 	userService := service.NewUserService(userRepo, refreshTokenRepo, jwtService, db)
 
-	// Create temporary email template file
 	tempDir := t.TempDir()
 	emailTemplatePath := filepath.Join(tempDir, "base_mail.html")
 	err = os.WriteFile(
@@ -808,7 +758,6 @@ func TestUserService_SendVerificationEmail(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	// Mock email sending by overriding newDialer
 	originalNewDialer := utils.NewDialer
 	mockDialer := &MockDialer{}
 	utils.NewDialer = func(host string, port int, username, password string) utils.Dialer {
@@ -816,12 +765,10 @@ func TestUserService_SendVerificationEmail(t *testing.T) {
 	}
 	defer func() { utils.NewDialer = originalNewDialer }()
 
-	// Mock template path
 	originalPath := utils.PATH
 	utils.PATH = tempDir
 	defer func() { utils.PATH = originalPath }()
 
-	// Test cases
 	tests := []struct {
 		name          string
 		setup         func() dto.SendVerificationEmailRequest
@@ -831,7 +778,6 @@ func TestUserService_SendVerificationEmail(t *testing.T) {
 		{
 			name: "Successfully send verification email",
 			setup: func() dto.SendVerificationEmailRequest {
-				// Create test user
 				user := entity.User{
 					Name:       "Test User",
 					Email:      "test@example.com",
@@ -860,7 +806,6 @@ func TestUserService_SendVerificationEmail(t *testing.T) {
 		{
 			name: "Email sending fails",
 			setup: func() dto.SendVerificationEmailRequest {
-				// Create test user
 				user := entity.User{
 					Name:       "Test User",
 					Email:      "test2@example.com",
@@ -883,10 +828,8 @@ func TestUserService_SendVerificationEmail(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				// Clean database before each test
 				db.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
 
-				// Reset the template file to valid state before each test
 				err := os.WriteFile(
 					emailTemplatePath, []byte(`
                 <html>
@@ -899,22 +842,17 @@ func TestUserService_SendVerificationEmail(t *testing.T) {
 				)
 				assert.NoError(t, err)
 
-				// Create fresh mock for each test
 				mockDialer := &MockDialer{}
 				utils.NewDialer = func(host string, port int, username, password string) utils.Dialer {
 					return mockDialer
 				}
 
-				// Setup test data
 				req := tt.setup()
 
-				// Setup mock expectations
 				tt.mockEmail(mockDialer)
 
-				// Execute the function
 				err = userService.SendVerificationEmail(context.Background(), req)
 
-				// Validate results
 				if tt.expectedError != nil {
 					assert.Error(t, err)
 					if tt.name == "Template parsing fails" {
@@ -926,15 +864,16 @@ func TestUserService_SendVerificationEmail(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				// Verify mock expectations
 				mockDialer.AssertExpectations(t)
 			},
 		)
 	}
 }
 
+// TestUserService_VerifyEmail tests the functionality of the VerifyEmail method in the UserService.
+// It covers scenarios such as successful email verification, expired tokens, invalid token formats,
+// already verified accounts, non-existent users, and malformed token content.
 func TestUserService_VerifyEmail(t *testing.T) {
-	// Start test container
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -944,7 +883,6 @@ func TestUserService_VerifyEmail(t *testing.T) {
 		}
 	}(dbContainer)
 
-	// Set environment variables for database connection
 	err = os.Setenv("DB_HOST", dbContainer.Host)
 	if err != nil {
 		panic(err)
@@ -966,12 +904,10 @@ func TestUserService_VerifyEmail(t *testing.T) {
 		panic(err)
 	}
 
-	// Set AES encryption key for testing
 	originalKey := utils.KEY
-	utils.KEY = "6368616e676520746869732070617373776f726420746f206120736563726574" // test key
+	utils.KEY = "6368616e676520746869732070617373776f726420746f206120736563726574"
 	defer func() { utils.KEY = originalKey }()
 
-	// Setup database connection
 	db := container.SetUpDatabaseConnection()
 	defer func(db *gorm.DB) {
 		err := container.CloseDatabaseConnection(db)
@@ -980,27 +916,21 @@ func TestUserService_VerifyEmail(t *testing.T) {
 		}
 	}(db)
 
-	// Migrate database schema
 	err = db.AutoMigrate(&entity.User{}, &entity.RefreshToken{})
 	assert.NoError(t, err)
 
-	// Initialize repositories
 	userRepo := repository.NewUserRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 	jwtService := service.NewJWTService()
 
-	// Create user service
 	userService := service.NewUserService(userRepo, refreshTokenRepo, jwtService, db)
 
-	// Clean up database after test
 	defer func() {
 		db.Exec("DELETE FROM users WHERE TRUE")
 	}()
 
-	// Create test context
 	ctx := context.Background()
 
-	// Helper function to create a test token
 	createTestToken := func(email string, hoursToAdd time.Duration) string {
 		expired := time.Now().Add(hoursToAdd).Format("2006-01-02 15:04:05")
 		plainText := email + "_" + expired
@@ -1009,17 +939,15 @@ func TestUserService_VerifyEmail(t *testing.T) {
 		return token
 	}
 
-	// Test cases
 	tests := []struct {
 		name          string
-		setup         func() (string, string) // returns (email, token)
+		setup         func() (string, string)
 		expectedError error
 		validate      func(t *testing.T, response dto.VerifyEmailResponse, email string)
 	}{
 		{
 			name: "Successfully verify email",
 			setup: func() (string, string) {
-				// Create unverified test user
 				user := entity.User{
 					Name:       "Test User",
 					Email:      "test@example.com",
@@ -1031,7 +959,6 @@ func TestUserService_VerifyEmail(t *testing.T) {
 				createdUser, err := userRepo.Register(ctx, nil, user)
 				assert.NoError(t, err)
 
-				// Create valid token
 				token := createTestToken(createdUser.Email, 24*time.Hour)
 				return createdUser.Email, token
 			},
@@ -1040,7 +967,6 @@ func TestUserService_VerifyEmail(t *testing.T) {
 				assert.Equal(t, email, response.Email)
 				assert.True(t, response.IsVerified)
 
-				// Verify user is updated in database
 				dbUser, err := userRepo.GetUserByEmail(ctx, nil, email)
 				assert.NoError(t, err)
 				assert.True(t, dbUser.IsVerified)
@@ -1049,7 +975,6 @@ func TestUserService_VerifyEmail(t *testing.T) {
 		{
 			name: "Expired token",
 			setup: func() (string, string) {
-				// Create unverified test user
 				user := entity.User{
 					Name:       "Test User",
 					Email:      "test@example.com",
@@ -1061,7 +986,6 @@ func TestUserService_VerifyEmail(t *testing.T) {
 				createdUser, err := userRepo.Register(ctx, nil, user)
 				assert.NoError(t, err)
 
-				// Create expired token
 				token := createTestToken(createdUser.Email, -24*time.Hour)
 				return createdUser.Email, token
 			},
@@ -1070,7 +994,6 @@ func TestUserService_VerifyEmail(t *testing.T) {
 				assert.Equal(t, email, response.Email)
 				assert.False(t, response.IsVerified)
 
-				// Verify user is not updated in database
 				dbUser, err := userRepo.GetUserByEmail(ctx, nil, email)
 				assert.NoError(t, err)
 				assert.False(t, dbUser.IsVerified)
@@ -1090,7 +1013,6 @@ func TestUserService_VerifyEmail(t *testing.T) {
 		{
 			name: "Already verified account",
 			setup: func() (string, string) {
-				// Create verified test user
 				user := entity.User{
 					Name:       "Test User",
 					Email:      "test@example.com",
@@ -1102,7 +1024,6 @@ func TestUserService_VerifyEmail(t *testing.T) {
 				createdUser, err := userRepo.Register(ctx, nil, user)
 				assert.NoError(t, err)
 
-				// Create valid token
 				token := createTestToken(createdUser.Email, 24*time.Hour)
 				return createdUser.Email, token
 			},
@@ -1128,7 +1049,6 @@ func TestUserService_VerifyEmail(t *testing.T) {
 		{
 			name: "Malformed token content",
 			setup: func() (string, string) {
-				// Create a token without the expected format (email_expiry)
 				plainText := "malformed_content"
 				token, err := utils.AESEncrypt(plainText)
 				assert.NoError(t, err)
@@ -1145,20 +1065,16 @@ func TestUserService_VerifyEmail(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				// Clean database before each test
 				db.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
 
-				// Setup test data and get email and token
 				email, token := tt.setup()
 
-				// Execute the function
 				response, err := userService.VerifyEmail(
 					ctx, dto.VerifyEmailRequest{
 						Token: token,
 					},
 				)
 
-				// Validate results
 				if tt.expectedError != nil {
 					assert.Error(t, err)
 					assert.Equal(t, tt.expectedError, err)
@@ -1166,15 +1082,14 @@ func TestUserService_VerifyEmail(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				// Validate response
 				tt.validate(t, response, email)
 			},
 		)
 	}
 }
 
+// TestUserService_Update tests the Update method of the UserService for both success and error scenarios.
 func TestUserService_Update(t *testing.T) {
-	// Start test container
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -1184,7 +1099,6 @@ func TestUserService_Update(t *testing.T) {
 		}
 	}(dbContainer)
 
-	// Set environment variables for database connection
 	err = os.Setenv("DB_HOST", dbContainer.Host)
 	if err != nil {
 		panic(err)
@@ -1206,7 +1120,6 @@ func TestUserService_Update(t *testing.T) {
 		panic(err)
 	}
 
-	// Setup database connection
 	db := container.SetUpDatabaseConnection()
 	defer func(db *gorm.DB) {
 		err := container.CloseDatabaseConnection(db)
@@ -1215,37 +1128,30 @@ func TestUserService_Update(t *testing.T) {
 		}
 	}(db)
 
-	// Migrate database schema
 	err = db.AutoMigrate(&entity.User{}, &entity.RefreshToken{})
 	assert.NoError(t, err)
 
-	// Initialize repositories
 	userRepo := repository.NewUserRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 	jwtService := service.NewJWTService()
 
-	// Create user service
 	userService := service.NewUserService(userRepo, refreshTokenRepo, jwtService, db)
 
-	// Clean up database after test
 	defer func() {
 		db.Exec("DELETE FROM users WHERE TRUE")
 	}()
 
-	// Create test context
 	ctx := context.Background()
 
-	// Test cases
 	tests := []struct {
 		name          string
-		setup         func() (string, dto.UserUpdateRequest) // returns user ID and update request
+		setup         func() (string, dto.UserUpdateRequest)
 		expectedError error
 		validate      func(t *testing.T, response dto.UserUpdateResponse, db *gorm.DB)
 	}{
 		{
 			name: "Successfully update user",
 			setup: func() (string, dto.UserUpdateRequest) {
-				// Create test user
 				user := entity.User{
 					Name:       "Original Name",
 					Email:      "original@example.com",
@@ -1270,10 +1176,9 @@ func TestUserService_Update(t *testing.T) {
 				assert.Equal(t, "Updated Name", response.Name)
 				assert.Equal(t, "updated@example.com", response.Email)
 				assert.Equal(t, "0987654321", response.TelpNumber)
-				assert.Equal(t, "user", response.Role) // Role shouldn't change
-				assert.True(t, response.IsVerified)    // IsVerified shouldn't change
+				assert.Equal(t, "user", response.Role)
+				assert.True(t, response.IsVerified)
 
-				// Verify the changes were persisted in the database
 				var dbUser entity.User
 				err := db.First(&dbUser, "id = ?", response.ID).Error
 				assert.NoError(t, err)
@@ -1301,16 +1206,12 @@ func TestUserService_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				// Clean database before each test
 				db.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
 
-				// Setup test data and get user ID and update request
 				userId, updateReq := tt.setup()
 
-				// Execute the function
 				response, err := userService.Update(ctx, updateReq, userId)
 
-				// Validate results
 				if tt.expectedError != nil {
 					assert.Error(t, err)
 					assert.Equal(t, tt.expectedError, err)
@@ -1318,15 +1219,15 @@ func TestUserService_Update(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				// Validate response and database state
 				tt.validate(t, response, db)
 			},
 		)
 	}
 }
 
+// TestUserService_Delete tests the Delete functionality of the UserService.
+// It validates user deletion, handling of non-existent users, and deletion with associated refresh tokens.
 func TestUserService_Delete(t *testing.T) {
-	// Start test container
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -1336,7 +1237,6 @@ func TestUserService_Delete(t *testing.T) {
 		}
 	}(dbContainer)
 
-	// Set environment variables for database connection
 	err = os.Setenv("DB_HOST", dbContainer.Host)
 	if err != nil {
 		panic(err)
@@ -1358,7 +1258,6 @@ func TestUserService_Delete(t *testing.T) {
 		panic(err)
 	}
 
-	// Setup database connection
 	db := container.SetUpDatabaseConnection()
 	defer func(db *gorm.DB) {
 		err := container.CloseDatabaseConnection(db)
@@ -1367,31 +1266,26 @@ func TestUserService_Delete(t *testing.T) {
 		}
 	}(db)
 
-	// Migrate database schema
 	err = db.AutoMigrate(&entity.User{}, &entity.RefreshToken{})
 	assert.NoError(t, err)
 
-	// Initialize repositories
 	userRepo := repository.NewUserRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 	jwtService := service.NewJWTService()
 
-	// Create user service
 	userService := service.NewUserService(userRepo, refreshTokenRepo, jwtService, db)
 
-	// Create test context
 	ctx := context.Background()
 
 	tests := []struct {
 		name          string
-		setup         func() string // returns user ID to delete
+		setup         func() string
 		expectedError error
 		verify        func(t *testing.T, userId string)
 	}{
 		{
 			name: "Successfully delete user",
 			setup: func() string {
-				// Create test user
 				user := entity.User{
 					Name:       "User to Delete",
 					Email:      "delete@example.com",
@@ -1406,12 +1300,10 @@ func TestUserService_Delete(t *testing.T) {
 			},
 			expectedError: nil,
 			verify: func(t *testing.T, userId string) {
-				// Verify user is deleted
 				_, err := userRepo.GetUserById(ctx, nil, userId)
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, gorm.ErrRecordNotFound))
 
-				// Verify transaction was committed by checking if refresh tokens are gone
 				var count int64
 				db.Model(&entity.RefreshToken{}).Where("user_id = ?", userId).Count(&count)
 				assert.Equal(t, int64(0), count)
@@ -1420,27 +1312,24 @@ func TestUserService_Delete(t *testing.T) {
 		{
 			name: "User not found",
 			setup: func() string {
-				return uuid.New().String() // non-existent ID
+				return uuid.New().String()
 			},
 			expectedError: dto.ErrUserNotFound,
 			verify: func(t *testing.T, userId string) {
-				// No verification needed for this case
 			},
 		},
 		{
 			name: "Invalid UUID format",
 			setup: func() string {
-				return "invalid-uuid" // malformed ID
+				return "invalid-uuid"
 			},
 			expectedError: dto.ErrUserNotFound,
 			verify: func(t *testing.T, userId string) {
-				// No verification needed for this case
 			},
 		},
 		{
 			name: "Delete user with refresh tokens",
 			setup: func() string {
-				// Create test user
 				user := entity.User{
 					Name:       "User With Tokens",
 					Email:      "withtokens@example.com",
@@ -1452,7 +1341,6 @@ func TestUserService_Delete(t *testing.T) {
 				createdUser, err := userRepo.Register(ctx, nil, user)
 				assert.NoError(t, err)
 
-				// Create refresh tokens for user
 				tokens := []entity.RefreshToken{
 					{
 						UserID:    createdUser.ID,
@@ -1475,12 +1363,10 @@ func TestUserService_Delete(t *testing.T) {
 			},
 			expectedError: nil,
 			verify: func(t *testing.T, userId string) {
-				// Verify user is deleted
 				_, err := userRepo.GetUserById(ctx, nil, userId)
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, gorm.ErrRecordNotFound))
 
-				// Verify refresh tokens are also deleted
 				var count int64
 				db.Model(&entity.RefreshToken{}).Where("user_id = ?", userId).Count(&count)
 				assert.Equal(t, int64(0), count)
@@ -1491,17 +1377,13 @@ func TestUserService_Delete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				// Clean database before each test
 				db.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
 				db.Exec("TRUNCATE TABLE refresh_tokens RESTART IDENTITY CASCADE")
 
-				// Setup test data and get user ID
 				userId := tt.setup()
 
-				// Execute the function
 				err := userService.Delete(ctx, userId)
 
-				// Validate results
 				if tt.expectedError != nil {
 					assert.Error(t, err)
 					assert.Equal(t, tt.expectedError, err)
@@ -1509,15 +1391,14 @@ func TestUserService_Delete(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				// Run verification
 				tt.verify(t, userId)
 			},
 		)
 	}
 }
 
+// TestUserService_Verify tests the user verification logic, including token generation and validation for multiple scenarios.
 func TestUserService_Verify(t *testing.T) {
-	// Start test container
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -1527,7 +1408,6 @@ func TestUserService_Verify(t *testing.T) {
 		}
 	}(dbContainer)
 
-	// Set environment variables for database connection
 	err = os.Setenv("DB_HOST", dbContainer.Host)
 	if err != nil {
 		panic(err)
@@ -1549,7 +1429,6 @@ func TestUserService_Verify(t *testing.T) {
 		panic(err)
 	}
 
-	// Setup database connection
 	db := container.SetUpDatabaseConnection()
 	defer func(db *gorm.DB) {
 		err := container.CloseDatabaseConnection(db)
@@ -1558,32 +1437,25 @@ func TestUserService_Verify(t *testing.T) {
 		}
 	}(db)
 
-	// Migrate database schema
 	err = db.AutoMigrate(&entity.User{}, &entity.RefreshToken{})
 	assert.NoError(t, err)
 
-	// Initialize repositories
 	userRepo := repository.NewUserRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 
-	// Mock JWT service
 	mockJWTService := &MockJWTService{}
 	mockJWTService.On("GenerateAccessToken", mock.Anything, mock.Anything).Return("mock-access-token")
 	mockJWTService.On("GenerateRefreshToken").Return("mock-refresh-token", time.Now().Add(24*time.Hour))
 
-	// Create user service
 	userService := service.NewUserService(userRepo, refreshTokenRepo, mockJWTService, db)
 
-	// Clean up database after test
 	defer func() {
 		db.Exec("DELETE FROM refresh_tokens WHERE TRUE")
 		db.Exec("DELETE FROM users WHERE TRUE")
 	}()
 
-	// Create test context
 	ctx := context.Background()
 
-	// Test cases
 	tests := []struct {
 		name          string
 		setup         func() dto.UserLoginRequest
@@ -1593,7 +1465,6 @@ func TestUserService_Verify(t *testing.T) {
 		{
 			name: "Successful verification",
 			setup: func() dto.UserLoginRequest {
-				// Create test user
 				password := "correctpassword"
 				assert.NoError(t, err)
 
@@ -1619,7 +1490,6 @@ func TestUserService_Verify(t *testing.T) {
 				assert.NotEmpty(t, tokens.RefreshToken)
 				assert.Equal(t, "user", tokens.Role)
 
-				// Verify refresh token was stored in database
 				var refreshToken entity.RefreshToken
 				err := db.First(&refreshToken).Error
 				assert.NoError(t, err)
@@ -1630,7 +1500,6 @@ func TestUserService_Verify(t *testing.T) {
 		{
 			name: "Invalid email",
 			setup: func() dto.UserLoginRequest {
-				// No setup needed - user doesn't exist
 				return dto.UserLoginRequest{
 					Email:    "nonexistent@example.com",
 					Password: "anypassword",
@@ -1645,7 +1514,6 @@ func TestUserService_Verify(t *testing.T) {
 		{
 			name: "Invalid password",
 			setup: func() dto.UserLoginRequest {
-				// Create test user
 				password := "correctpassword"
 				hashedPassword, err := helpers.HashPassword(password)
 				assert.NoError(t, err)
@@ -1675,7 +1543,6 @@ func TestUserService_Verify(t *testing.T) {
 		{
 			name: "Unverified account",
 			setup: func() dto.UserLoginRequest {
-				// Create test user
 				password := "correctpassword"
 				hashedPassword, err := helpers.HashPassword(password)
 				assert.NoError(t, err)
@@ -1707,17 +1574,13 @@ func TestUserService_Verify(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				// Clean database before each test
 				db.Exec("TRUNCATE TABLE refresh_tokens RESTART IDENTITY CASCADE")
 				db.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
 
-				// Setup test data
 				loginRequest := tt.setup()
 
-				// Execute the function
 				tokens, err := userService.Verify(ctx, loginRequest)
 
-				// Validate results
 				if tt.expectedError != "" {
 					assert.Error(t, err)
 					assert.Contains(t, err.Error(), tt.expectedError)
@@ -1725,15 +1588,14 @@ func TestUserService_Verify(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				// Validate response
 				tt.validate(t, tokens)
 			},
 		)
 	}
 }
 
+// TestUserService_RefreshToken tests the functionality of refreshing a user's token through scenarios like success, invalid, and expired tokens.
 func TestUserService_RefreshToken(t *testing.T) {
-	// Start test container
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -1743,7 +1605,6 @@ func TestUserService_RefreshToken(t *testing.T) {
 		}
 	}(dbContainer)
 
-	// Set environment variables for database connection
 	err = os.Setenv("DB_HOST", dbContainer.Host)
 	if err != nil {
 		panic(err)
@@ -1765,7 +1626,6 @@ func TestUserService_RefreshToken(t *testing.T) {
 		panic(err)
 	}
 
-	// Setup database connection
 	db := container.SetUpDatabaseConnection()
 	defer func(db *gorm.DB) {
 		err := container.CloseDatabaseConnection(db)
@@ -1774,30 +1634,23 @@ func TestUserService_RefreshToken(t *testing.T) {
 		}
 	}(db)
 
-	// Migrate database schema
 	err = db.AutoMigrate(&entity.User{}, &entity.RefreshToken{})
 	assert.NoError(t, err)
 
-	// Initialize repositories
 	userRepo := repository.NewUserRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 	jwtService := service.NewJWTService()
 
-	// Create user service
 	userService := service.NewUserService(userRepo, refreshTokenRepo, jwtService, db)
 
-	// Clean up database after test
 	defer func() {
 		db.Exec("DELETE FROM refresh_tokens WHERE TRUE")
 		db.Exec("DELETE FROM users WHERE TRUE")
 	}()
 
-	// Create test context
 	ctx := context.Background()
 
-	// Helper function to create test user with refresh token
 	createTestUserWithToken := func() (entity.User, string) {
-		// Create test user
 		user := entity.User{
 			Name:       "Test User",
 			Email:      "test@example.com",
@@ -1809,7 +1662,6 @@ func TestUserService_RefreshToken(t *testing.T) {
 		createdUser, err := userRepo.Register(ctx, nil, user)
 		assert.NoError(t, err)
 
-		// Create refresh token
 		refreshTokenString, expiresAt := jwtService.GenerateRefreshToken()
 
 		refreshToken := entity.RefreshToken{
@@ -1823,10 +1675,9 @@ func TestUserService_RefreshToken(t *testing.T) {
 		return createdUser, refreshTokenString
 	}
 
-	// Test cases
 	tests := []struct {
 		name          string
-		setup         func() (dto.RefreshTokenRequest, string) // returns request and expected role
+		setup         func() (dto.RefreshTokenRequest, string)
 		expectedError string
 		validate      func(t *testing.T, response dto.TokenResponse, originalRefreshToken string)
 	}{
@@ -1850,12 +1701,10 @@ func TestUserService_RefreshToken(t *testing.T) {
 					"Refresh token should be different after refresh",
 				)
 
-				// Verify old token was deleted
 				_, err := refreshTokenRepo.FindByToken(ctx, nil, originalRefreshToken)
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, gorm.ErrRecordNotFound))
 
-				// Verify new token exists
 				_, err = refreshTokenRepo.FindByToken(ctx, nil, response.RefreshToken)
 				assert.NoError(t, err)
 			},
@@ -1884,13 +1733,11 @@ func TestUserService_RefreshToken(t *testing.T) {
 				createdUser, err := userRepo.Register(ctx, nil, user)
 				assert.NoError(t, err)
 
-				// Create expired refresh token
 				refreshTokenString, _ := jwtService.GenerateRefreshToken()
-				// Do not hash the token
 				refreshToken := entity.RefreshToken{
 					UserID:    createdUser.ID,
-					Token:     refreshTokenString,             // Store raw token
-					ExpiresAt: time.Now().Add(-1 * time.Hour), // expired 1 hour ago
+					Token:     refreshTokenString,
+					ExpiresAt: time.Now().Add(-1 * time.Hour),
 				}
 				_, err = refreshTokenRepo.Create(ctx, nil, refreshToken)
 				assert.NoError(t, err)
@@ -1907,17 +1754,13 @@ func TestUserService_RefreshToken(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				// Clean database before each test
 				db.Exec("TRUNCATE TABLE refresh_tokens RESTART IDENTITY CASCADE")
 				db.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
 
-				// Setup test data
 				req, expectedRole := tt.setup()
 
-				// Execute the function
 				response, err := userService.RefreshToken(ctx, req)
 
-				// Validate results
 				if tt.expectedError != "" {
 					assert.Error(t, err)
 					assert.Contains(t, err.Error(), tt.expectedError)
@@ -1926,15 +1769,14 @@ func TestUserService_RefreshToken(t *testing.T) {
 					assert.Equal(t, expectedRole, response.Role)
 				}
 
-				// Run additional validations
 				tt.validate(t, response, req.RefreshToken)
 			},
 		)
 	}
 }
 
+// TestUserService_RevokeRefreshToken tests the RevokeRefreshToken function of UserService with various scenarios and assertions.
 func TestUserService_RevokeRefreshToken(t *testing.T) {
-	// Start test container
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -1944,7 +1786,6 @@ func TestUserService_RevokeRefreshToken(t *testing.T) {
 		}
 	}(dbContainer)
 
-	// Set environment variables for database connection
 	err = os.Setenv("DB_HOST", dbContainer.Host)
 	assert.NoError(t, err)
 	err = os.Setenv("DB_USER", "testuser")
@@ -1956,38 +1797,31 @@ func TestUserService_RevokeRefreshToken(t *testing.T) {
 	err = os.Setenv("DB_PORT", dbContainer.Port)
 	assert.NoError(t, err)
 
-	// Setup database connection
 	db := container.SetUpDatabaseConnection()
 	defer func(db *gorm.DB) {
 		err := container.CloseDatabaseConnection(db)
 		assert.NoError(t, err)
 	}(db)
 
-	// Migrate database schema
 	err = db.AutoMigrate(&entity.User{}, &entity.RefreshToken{})
 	assert.NoError(t, err)
 
-	// Initialize repositories
 	userRepo := repository.NewUserRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 	jwtService := service.NewJWTService()
 
-	// Create user service
 	userService := service.NewUserService(userRepo, refreshTokenRepo, jwtService, db)
 
-	// Create test context
 	ctx := context.Background()
 
-	// Test cases
 	tests := []struct {
 		name          string
-		setup         func() (string, int) // returns user ID and expected token count
+		setup         func() (string, int)
 		expectedError error
 	}{
 		{
 			name: "Successfully revoke refresh tokens",
 			setup: func() (string, int) {
-				// Create test user
 				user := entity.User{
 					Name:       "Test User",
 					Email:      "test@example.com",
@@ -1999,7 +1833,6 @@ func TestUserService_RevokeRefreshToken(t *testing.T) {
 				createdUser, err := userRepo.Register(ctx, nil, user)
 				assert.NoError(t, err)
 
-				// Create refresh tokens for the user
 				refreshTokens := []entity.RefreshToken{
 					{
 						UserID:    createdUser.ID,
@@ -2018,21 +1851,20 @@ func TestUserService_RevokeRefreshToken(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				return createdUser.ID.String(), 0 // Expect 0 tokens after revocation
+				return createdUser.ID.String(), 0
 			},
 			expectedError: nil,
 		},
 		{
 			name: "User not found",
 			setup: func() (string, int) {
-				return uuid.New().String(), 0 // non-existent user ID
+				return uuid.New().String(), 0
 			},
 			expectedError: dto.ErrUserNotFound,
 		},
 		{
 			name: "No tokens to revoke",
 			setup: func() (string, int) {
-				// Create test user with no refresh tokens
 				user := entity.User{
 					Name:       "Test User No Tokens",
 					Email:      "notokens@example.com",
@@ -2043,7 +1875,7 @@ func TestUserService_RevokeRefreshToken(t *testing.T) {
 				}
 				createdUser, err := userRepo.Register(ctx, nil, user)
 				assert.NoError(t, err)
-				return createdUser.ID.String(), 0 // Expect 0 tokens (none existed)
+				return createdUser.ID.String(), 0
 			},
 			expectedError: nil,
 		},
@@ -2059,17 +1891,13 @@ func TestUserService_RevokeRefreshToken(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				// Clean database before each test
 				db.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
 				db.Exec("TRUNCATE TABLE refresh_tokens RESTART IDENTITY CASCADE")
 
-				// Setup test data and get user ID and expected token count
 				userID, expectedTokenCount := tt.setup()
 
-				// Execute the function
 				err := userService.RevokeRefreshToken(ctx, userID)
 
-				// Validate results
 				if tt.expectedError != nil {
 					assert.Error(t, err)
 					assert.Equal(t, tt.expectedError, err)
@@ -2077,7 +1905,6 @@ func TestUserService_RevokeRefreshToken(t *testing.T) {
 					assert.NoError(t, err)
 				}
 
-				// Verify token count in database if no error was expected
 				if tt.expectedError == nil {
 					var count int64
 					err := db.Model(&entity.RefreshToken{}).Where("user_id = ?", userID).Count(&count).Error

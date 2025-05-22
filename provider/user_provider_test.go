@@ -1,34 +1,39 @@
 package provider
 
 import (
-	"github.com/Caknoooo/go-gin-clean-starter/constants"
-	"github.com/Caknoooo/go-gin-clean-starter/controller"
-	"github.com/Caknoooo/go-gin-clean-starter/service"
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/samber/do"
-	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 	"testing"
 	"time"
+
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/samber/do"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/Caknoooo/go-gin-clean-starter/constants"
+	"github.com/Caknoooo/go-gin-clean-starter/controller"
+	"github.com/Caknoooo/go-gin-clean-starter/service"
 )
 
-// Mock JWTService for testing
+// mockJWTService is a mock implementation of the JWTService interface, used for testing purposes.
 type mockJWTService struct{}
 
+// GenerateAccessToken generates a mock access token for the given userID and role, primarily used for testing purposes.
 func (m *mockJWTService) GenerateAccessToken(userID string, role string) string {
 	return "mock-access-token"
 }
 
+// GenerateRefreshToken generates a mock refresh token and its expiration time for testing purposes.
 func (m *mockJWTService) GenerateRefreshToken() (string, time.Time) {
 	return "mock-refresh-token", time.Now().Add(24 * time.Hour)
 }
 
+// GetUserIDByToken extracts the user ID from the given token and returns it along with any potential error encountered.
 func (m *mockJWTService) GetUserIDByToken(token string) (string, error) {
 	return "mock-user-id", nil
 }
 
+// ValidateToken validates the provided JWT token and returns a mock jwt.Token object and an error if applicable.
 func (m *mockJWTService) ValidateToken(token string) (*jwt.Token, error) {
-	// Return a mock JWT token for testing
 	claims := jwt.MapClaims{
 		"user_id": "mock-user-id",
 		"role":    "user",
@@ -40,35 +45,30 @@ func (m *mockJWTService) ValidateToken(token string) (*jwt.Token, error) {
 	}, nil
 }
 
+// TestProvideUserDependencies verifies that user-related dependencies such as controllers are correctly provided by the injector.
 func TestProvideUserDependencies(t *testing.T) {
-	// Create a new injector
 	injector := do.New()
 
-	// Provide mock dependencies
 	mockDB := &gorm.DB{}
 	do.ProvideNamedValue[*gorm.DB](injector, constants.DB, mockDB)
 
 	mockJWT := &mockJWTService{}
 	do.ProvideNamedValue[service.JWTService](injector, constants.JWTService, mockJWT)
 
-	// Call the function
 	ProvideUserDependencies(injector)
 
-	// Verify that the UserController can be resolved
 	userController, err := do.Invoke[controller.UserController](injector)
 	assert.NoError(t, err, "should provide UserController without error")
 	assert.NotNil(t, userController, "UserController should not be nil")
 }
 
+// TestProvideUserDependencies_MissingDB verifies that ProvideUserDependencies panics if the database dependency is missing.
 func TestProvideUserDependencies_MissingDB(t *testing.T) {
-	// Create a new injector
 	injector := do.New()
 
-	// Provide only JWTService, omit DB
 	mockJWT := &mockJWTService{}
 	do.ProvideNamedValue[service.JWTService](injector, constants.JWTService, mockJWT)
 
-	// Call the function and expect a panic due to missing DB
 	assert.Panics(
 		t,
 		func() {
@@ -78,15 +78,13 @@ func TestProvideUserDependencies_MissingDB(t *testing.T) {
 	)
 }
 
+// TestProvideUserDependencies_MissingJWTService checks if ProvideUserDependencies panics when JWTService dependency is missing.
 func TestProvideUserDependencies_MissingJWTService(t *testing.T) {
-	// Create a new injector
 	injector := do.New()
 
-	// Provide only DB, omit JWTService
 	mockDB := &gorm.DB{}
 	do.ProvideNamedValue[*gorm.DB](injector, constants.DB, mockDB)
 
-	// Call the function and expect a panic due to missing JWTService
 	assert.Panics(
 		t,
 		func() {

@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// TestScript is a test function that validates the behavior of the Script function with various input scenarios.
 func TestScript(t *testing.T) {
 	tests := []struct {
 		name       string

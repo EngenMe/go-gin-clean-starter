@@ -2,21 +2,26 @@ package config
 
 import (
 	"fmt"
-	"github.com/Caknoooo/go-gin-clean-starter/constants"
+	"os"
+
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"os"
+
+	"github.com/Caknoooo/go-gin-clean-starter/constants"
 )
 
+// RunExtension ensures the "uuid-ossp" PostgreSQL extension is installed in the database.
 func RunExtension(db *gorm.DB) {
 	db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
 }
 
+// loadEnv loads environment variables from a .env file based on the current application environment.
+// Defaults to ".env" if APP_ENV is not set or not recognized. Panics if the file is missing (except in production).
 func loadEnv() {
 	appEnv := os.Getenv("APP_ENV")
 	if appEnv == "" {
-		appEnv = constants.ENUM_RUN_DEVELOPMENT // Assuming this constant exists
+		appEnv = constants.ENUM_RUN_DEVELOPMENT
 	}
 
 	var envFile string
@@ -30,13 +35,13 @@ func loadEnv() {
 	}
 
 	if err := godotenv.Overload(envFile); err != nil {
-		// Don't panic if .env file is not found in production (use actual env vars)
 		if !os.IsNotExist(err) || appEnv != constants.ENUM_RUN_PRODUCTION {
 			panic(fmt.Errorf("failed to load %s file: %w", envFile, err))
 		}
 	}
 }
 
+// SetUpDatabaseConnection initializes and configures a Gorm database connection, applying required settings and extensions.
 var SetUpDatabaseConnection = func() *gorm.DB {
 	if os.Getenv("APP_ENV") != constants.ENUM_RUN_PRODUCTION {
 		loadEnv()
@@ -78,6 +83,7 @@ var SetUpDatabaseConnection = func() *gorm.DB {
 	return db
 }
 
+// CloseDatabaseConnection closes the given database connection safely, handling errors during the process.
 func CloseDatabaseConnection(db *gorm.DB) {
 	dbSQL, err := db.DB()
 	if err != nil {
@@ -88,7 +94,7 @@ func CloseDatabaseConnection(db *gorm.DB) {
 	}
 }
 
-// DatabaseConfig holds database configuration
+// DatabaseConfig holds the configuration parameters for connecting to a database.
 type DatabaseConfig struct {
 	User     string
 	Password string
@@ -97,7 +103,7 @@ type DatabaseConfig struct {
 	Port     string
 }
 
-// getEnv is a helper function to get environment variables with fallback
+// getEnv retrieves the value of the specified environment variable or returns the provided default value if not set.
 func getEnv(key, defaultValue string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value

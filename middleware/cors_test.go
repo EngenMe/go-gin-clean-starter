@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestCORSMiddleware tests the CORSMiddleware to ensure it sets correct CORS headers and handles preflight requests correctly.
 func TestCORSMiddleware(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -58,11 +59,9 @@ func TestCORSMiddleware(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				// Create a fresh router for each test case
 				router := gin.New()
 				router.Use(CORSMiddleware())
 
-				// Setup route based on test case
 				switch tt.method {
 				case http.MethodGet:
 					router.GET(
@@ -77,26 +76,20 @@ func TestCORSMiddleware(t *testing.T) {
 						},
 					)
 				case http.MethodOptions:
-					// OPTIONS is handled by the middleware directly
 					router.OPTIONS(tt.path, func(c *gin.Context) {})
 				}
 
-				// Create a test request
 				req, _ := http.NewRequest(tt.method, tt.path, nil)
 				resp := httptest.NewRecorder()
 
-				// Perform the request
 				router.ServeHTTP(resp, req)
 
-				// Check status code
 				assert.Equal(t, tt.expectedStatus, resp.Code)
 
-				// Check headers
 				for key, expectedValue := range tt.expectedHeaders {
 					assert.Equal(t, expectedValue, resp.Header().Get(key))
 				}
 
-				// Special case: OPTIONS request should abort
 				if tt.method == http.MethodOptions {
 					assert.Empty(t, resp.Body.String())
 				}
@@ -105,8 +98,8 @@ func TestCORSMiddleware(t *testing.T) {
 	}
 }
 
+// TestCORSMiddleware_WithOrigin tests if the CORSMiddleware correctly sets the Access-Control-Allow-Origin header for a valid origin.
 func TestCORSMiddleware_WithOrigin(t *testing.T) {
-	// Create a test Gin router
 	router := gin.New()
 	router.Use(CORSMiddleware())
 	router.GET(
@@ -115,14 +108,12 @@ func TestCORSMiddleware_WithOrigin(t *testing.T) {
 		},
 	)
 
-	// Test with Origin header
 	req, _ := http.NewRequest(http.MethodGet, "/test", nil)
 	req.Header.Set("Origin", "http://example.com")
 	resp := httptest.NewRecorder()
 
 	router.ServeHTTP(resp, req)
 
-	// The middleware should still return "*" for Access-Control-Allow-Origin
 	assert.Equal(t, "*", resp.Header().Get("Access-Control-Allow-Origin"))
 	assert.Equal(t, http.StatusOK, resp.Code)
 }

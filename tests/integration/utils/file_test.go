@@ -2,7 +2,6 @@ package utils_test
 
 import (
 	"bytes"
-	"github.com/Caknoooo/go-gin-clean-starter/utils"
 	"mime/multipart"
 	"net/http/httptest"
 	"os"
@@ -13,15 +12,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/Caknoooo/go-gin-clean-starter/utils"
 )
 
+// FileUploadIntegrationTestSuite is a test suite for integration testing of file upload functionalities.
 type FileUploadIntegrationTestSuite struct {
 	suite.Suite
 	testDir string
 }
 
+// SetupSuite prepares the test suite environment by creating the necessary test directory and initializing paths.
 func (suite *FileUploadIntegrationTestSuite) SetupSuite() {
-	// Setup test directory
 	suite.testDir = "./test_assets_integration"
 	utils.PATH = suite.testDir
 	err := os.MkdirAll(suite.testDir, 0755)
@@ -30,15 +32,16 @@ func (suite *FileUploadIntegrationTestSuite) SetupSuite() {
 	}
 }
 
+// TearDownSuite cleans up resources after all tests in the suite have run, including deleting the test directory.
 func (suite *FileUploadIntegrationTestSuite) TearDownSuite() {
-	// Clean up test directory
 	err := os.RemoveAll(suite.testDir)
 	if err != nil {
 		panic(err)
 	}
-	utils.PATH = "assets" // Reset to original value
+	utils.PATH = "assets"
 }
 
+// createTestFile creates a new test file with the given content and returns its multipart file header.
 func (suite *FileUploadIntegrationTestSuite) createTestFile(content string) *multipart.FileHeader {
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
@@ -64,6 +67,7 @@ func (suite *FileUploadIntegrationTestSuite) createTestFile(content string) *mul
 	return header
 }
 
+// TestUploadFile_Integration verifies the successful uploading of files and handling of nested directories using integration tests.
 func (suite *FileUploadIntegrationTestSuite) TestUploadFile_Integration() {
 	tests := []struct {
 		name        string
@@ -96,7 +100,6 @@ func (suite *FileUploadIntegrationTestSuite) TestUploadFile_Integration() {
 				} else {
 					assert.NoError(suite.T(), err)
 
-					// Verify file was created
 					parts := strings.Split(tt.path, "/")
 					fileID := parts[len(parts)-1]
 					dirPath := filepath.Join(suite.testDir, strings.Join(parts[:len(parts)-1], "/"))
@@ -105,7 +108,6 @@ func (suite *FileUploadIntegrationTestSuite) TestUploadFile_Integration() {
 					_, err = os.Stat(filePath)
 					assert.NoError(suite.T(), err)
 
-					// Verify file content
 					content, err := os.ReadFile(filePath)
 					require.NoError(suite.T(), err)
 					assert.Equal(suite.T(), tt.fileContent, string(content))
@@ -115,6 +117,7 @@ func (suite *FileUploadIntegrationTestSuite) TestUploadFile_Integration() {
 	}
 }
 
+// TestFileUploadIntegrationTestSuite runs the integration test suite for file upload functionality using testify's suite package.
 func TestFileUploadIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(FileUploadIntegrationTestSuite))
 }

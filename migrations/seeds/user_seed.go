@@ -2,16 +2,18 @@ package seeds
 
 import (
 	"encoding/json"
-	"github.com/Caknoooo/go-gin-clean-starter/helpers"
 	"io"
 	"os"
 	"path"
 
+	"gorm.io/gorm"
+
 	"github.com/Caknoooo/go-gin-clean-starter/dto"
 	"github.com/Caknoooo/go-gin-clean-starter/entity"
-	"gorm.io/gorm"
+	"github.com/Caknoooo/go-gin-clean-starter/helpers"
 )
 
+// ListUserSeeder is a function that seeds user data into the database from a JSON file located in the project directory.
 var ListUserSeeder = func(db *gorm.DB) error {
 	projectDir, err := helpers.GetProjectRoot()
 	if err != nil {
@@ -30,7 +32,6 @@ var ListUserSeeder = func(db *gorm.DB) error {
 		}
 	}(jsonFile)
 
-	// Extend UserCreateRequest to include Role and IsVerified
 	type SeedUserRequest struct {
 		dto.UserCreateRequest
 		Role       string `json:"role" binding:"required,oneof=user admin"`
@@ -55,7 +56,6 @@ var ListUserSeeder = func(db *gorm.DB) error {
 	}
 
 	for _, seedUser := range seedUsers {
-		// Convert SeedUserRequest to entity.User
 		user := entity.User{
 			Name:       seedUser.Name,
 			TelpNumber: seedUser.TelpNumber,
@@ -65,7 +65,6 @@ var ListUserSeeder = func(db *gorm.DB) error {
 			IsVerified: seedUser.IsVerified,
 		}
 
-		// Check if user already exists
 		var existingUser entity.User
 		isData := db.Where("email = ?", user.Email).Find(&existingUser).RowsAffected
 

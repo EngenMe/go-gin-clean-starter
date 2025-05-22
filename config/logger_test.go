@@ -13,8 +13,8 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// TestSetupLogger tests the SetupLogger function ensuring it handles log directory and file creation correctly.
 func TestSetupLogger(t *testing.T) {
-	// Setup test directory
 	testDir := "./test_logs"
 	t.Cleanup(
 		func() {
@@ -27,7 +27,6 @@ func TestSetupLogger(t *testing.T) {
 
 	t.Run(
 		"Successfully creates logger with directory and file", func(t *testing.T) {
-			// Replace the constant for testing
 			originalLogDir := LogDir
 			LogDir = testDir
 			t.Cleanup(
@@ -36,17 +35,13 @@ func TestSetupLogger(t *testing.T) {
 				},
 			)
 
-			// Execute
 			result := SetupLogger()
 
-			// Verify
 			assert.NotNil(t, result)
 
-			// Check directory was created
 			_, err := os.Stat(testDir)
 			assert.NoError(t, err)
 
-			// Check log file was created
 			currentMonth := strings.ToLower(time.Now().Format("January"))
 			logFileName := fmt.Sprintf("%s_query.log", currentMonth)
 			logPath := filepath.Join(testDir, logFileName)
@@ -61,7 +56,6 @@ func TestSetupLogger(t *testing.T) {
 				t.Skip("Skipping test when running as root")
 			}
 
-			// Replace the constant for testing with invalid path
 			originalLogDir := LogDir
 			LogDir = "/root/protected_directory"
 			t.Cleanup(
@@ -74,7 +68,6 @@ func TestSetupLogger(t *testing.T) {
 
 	t.Run(
 		"Fails when file cannot be created", func(t *testing.T) {
-			// Replace the constant for testing
 			originalLogDir := LogDir
 			LogDir = testDir
 			t.Cleanup(
@@ -83,15 +76,14 @@ func TestSetupLogger(t *testing.T) {
 				},
 			)
 
-			// Create directory but make it read-only
 			err := os.MkdirAll(testDir, 0444)
 			require.NoError(t, err)
 		},
 	)
 }
 
+// TestLoggerInterfaceImplementation validates that SetupLogger returns an implementation of the logger.Interface interface.
 func TestLoggerInterfaceImplementation(t *testing.T) {
-	// Setup test directory
 	testDir := "./test_logs"
 	t.Cleanup(
 		func() {
@@ -102,7 +94,6 @@ func TestLoggerInterfaceImplementation(t *testing.T) {
 		},
 	)
 
-	// Replace the constant for testing
 	originalLogDir := LogDir
 	LogDir = testDir
 	t.Cleanup(
@@ -111,10 +102,8 @@ func TestLoggerInterfaceImplementation(t *testing.T) {
 		},
 	)
 
-	// Execute
 	result := SetupLogger()
 
-	// Verify it implements the logger.Interface
 	_, ok := result.(logger.Interface)
 	assert.True(t, ok, "SetupLogger should return a logger.Interface implementation")
 }

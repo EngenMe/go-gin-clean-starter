@@ -3,47 +3,53 @@ package middleware
 import (
 	"encoding/json"
 	"errors"
-	"github.com/golang-jwt/jwt/v4"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/Caknoooo/go-gin-clean-starter/dto"
-	"github.com/Caknoooo/go-gin-clean-starter/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/Caknoooo/go-gin-clean-starter/dto"
+	"github.com/Caknoooo/go-gin-clean-starter/utils"
 )
 
+// MockJWTService is a mock implementation of a service for handling JWT-related operations using the mock.Mock library.
 type MockJWTService struct {
 	mock.Mock
 }
 
+// ValidateToken validates a JWT token and returns the parsed token or an error if validation fails.
 func (m *MockJWTService) ValidateToken(token string) (*jwt.Token, error) {
 	args := m.Called(token)
-	// Handle nil case safely
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*jwt.Token), args.Error(1)
 }
 
+// GetUserIDByToken retrieves the user ID from the provided JWT token or returns an error if the operation fails.
 func (m *MockJWTService) GetUserIDByToken(token string) (string, error) {
 	args := m.Called(token)
 	return args.String(0), args.Error(1)
 }
 
+// GenerateAccessToken generates a mock JWT access token based on the provided user ID and role.
 func (m *MockJWTService) GenerateAccessToken(userId string, role string) string {
 	args := m.Called(userId, role)
 	return args.String(0)
 }
 
+// GenerateRefreshToken generates a mock JWT refresh token and its expiration time for testing purposes.
 func (m *MockJWTService) GenerateRefreshToken() (string, time.Time) {
 	args := m.Called()
 	return args.String(0), args.Get(1).(time.Time)
 }
 
+// TestAuthenticateMiddleware tests the behavior of the Authenticate middleware under various authorization scenarios.
 func TestAuthenticateMiddleware(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -79,7 +85,6 @@ func TestAuthenticateMiddleware(t *testing.T) {
 			name:      "Invalid token",
 			setupAuth: func() string { return "Bearer invalidtoken" },
 			mockJWTSetup: func(mock *MockJWTService) {
-				// Explicitly return nil as *jwt.Token
 				mock.On("ValidateToken", "invalidtoken").Return((*jwt.Token)(nil), errors.New("invalid token"))
 			},
 			expectedStatus: http.StatusUnauthorized,
@@ -125,15 +130,12 @@ func TestAuthenticateMiddleware(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				// Setup
 				gin.SetMode(gin.TestMode)
 				router := gin.New()
 
-				// Create mock JWT service
 				mockJWT := new(MockJWTService)
 				tt.mockJWTSetup(mockJWT)
 
-				// Add middleware and test route
 				router.Use(Authenticate(mockJWT))
 				router.GET(
 					"/test", func(c *gin.Context) {
@@ -144,21 +146,17 @@ func TestAuthenticateMiddleware(t *testing.T) {
 					},
 				)
 
-				// Create request
 				req, _ := http.NewRequest(http.MethodGet, "/test", nil)
 				authHeader := tt.setupAuth()
 				if authHeader != "" {
 					req.Header.Set("Authorization", authHeader)
 				}
 
-				// Record response
 				resp := httptest.NewRecorder()
 				router.ServeHTTP(resp, req)
 
-				// Verify status code
 				assert.Equal(t, tt.expectedStatus, resp.Code)
 
-				// Verify response body for error cases
 				if tt.expectedStatus != http.StatusOK {
 					var response utils.Response
 					err := json.Unmarshal(resp.Body.Bytes(), &response)
@@ -168,7 +166,6 @@ func TestAuthenticateMiddleware(t *testing.T) {
 					assert.Equal(t, tt.expectedResponse.Error, response.Error)
 				}
 
-				// Assert mock expectations
 				mockJWT.AssertExpectations(t)
 			},
 		)

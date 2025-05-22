@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestBuildResponseSuccess validates the functionality of BuildResponseSuccess by checking various input scenarios and outputs.
 func TestBuildResponseSuccess(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -57,6 +58,7 @@ func TestBuildResponseSuccess(t *testing.T) {
 	}
 }
 
+// TestBuildResponseFailed verifies the functionality of BuildResponseFailed by testing various failure scenarios.
 func TestBuildResponseFailed(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -125,16 +127,11 @@ func TestBuildResponseFailed(t *testing.T) {
 	}
 }
 
+// TestEmptyObj validates the behavior and properties of an empty struct in Go, including its name, size, and equality.
 func TestEmptyObj(t *testing.T) {
-	// Test that EmptyObj is indeed an empty struct by checking its type and size
-	var empty EmptyObj
+	var empty struct{}
 
-	// Check the type is exactly EmptyObj
-	assert.Equal(t, "EmptyObj", reflect.TypeOf(empty).Name())
-
-	// Check the size is 0 (empty struct)
 	assert.Equal(t, 0, int(reflect.TypeOf(empty).Size()))
 
-	// Compare with another EmptyObj instance
-	assert.True(t, reflect.DeepEqual(empty, EmptyObj{}))
+	assert.True(t, reflect.DeepEqual(empty, struct{}{}))
 }

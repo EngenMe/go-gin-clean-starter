@@ -1,7 +1,11 @@
 package utils
 
-// Response represents the standard API response
-// @Description Standard response structure for all API endpoints
+// Response represents a standard structure for API responses.
+// Status indicates the success or failure of the operation.
+// Message provides a human-readable message about the operation.
+// Error holds error details when the operation fails (optional).
+// Data contains the result of the operation, if any (optional).
+// Meta includes additional metadata related to the response (optional).
 type Response struct {
 	Status  bool   `json:"status"`
 	Message string `json:"message"`
@@ -10,10 +14,7 @@ type Response struct {
 	Meta    any    `json:"meta,omitempty"`
 }
 
-// EmptyObj represents an empty object
-// @Description Used when no data is returned
-type EmptyObj struct{}
-
+// BuildResponseSuccess constructs a successful Response with the provided message and data.
 func BuildResponseSuccess(message string, data any) Response {
 	res := Response{
 		Status:  true,
@@ -23,6 +24,7 @@ func BuildResponseSuccess(message string, data any) Response {
 	return res
 }
 
+// BuildResponseFailed constructs and returns a failed Response with given message, error, and data.
 func BuildResponseFailed(message string, err string, data any) Response {
 	res := Response{
 		Status:  false,

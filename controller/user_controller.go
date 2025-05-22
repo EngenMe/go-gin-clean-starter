@@ -3,13 +3,16 @@ package controller
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/Caknoooo/go-gin-clean-starter/dto"
 	"github.com/Caknoooo/go-gin-clean-starter/service"
 	"github.com/Caknoooo/go-gin-clean-starter/utils"
-	"github.com/gin-gonic/gin"
 )
 
 type (
+
+	// UserController defines methods for handling user-related actions in the application.
 	UserController interface {
 		Register(ctx *gin.Context)
 		Login(ctx *gin.Context)
@@ -22,11 +25,13 @@ type (
 		Delete(ctx *gin.Context)
 	}
 
+	// userController manages operations related to user entities by interacting with the UserService.
 	userController struct {
 		userService service.UserService
 	}
 )
 
+// NewUserController creates and returns a new instance of UserController using the provided UserService implementation.
 func NewUserController(us service.UserService) UserController {
 	return &userController{
 		userService: us,

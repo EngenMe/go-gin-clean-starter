@@ -5,13 +5,15 @@ import (
 	"os"
 	"strings"
 
+	"github.com/samber/do"
+	"gorm.io/gorm"
+
 	"github.com/Caknoooo/go-gin-clean-starter/constants"
 	"github.com/Caknoooo/go-gin-clean-starter/migrations"
 	"github.com/Caknoooo/go-gin-clean-starter/script"
-	"github.com/samber/do"
-	"gorm.io/gorm"
 )
 
+// Commands is a function that processes command-line arguments to handle database migrations, seeding, scripts, or runtime tasks.
 var Commands = func(injector *do.Injector) bool {
 	db := do.MustInvokeNamed[*gorm.DB](injector, constants.DB)
 

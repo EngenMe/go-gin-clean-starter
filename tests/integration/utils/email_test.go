@@ -2,19 +2,22 @@ package utils_test
 
 import (
 	"context"
-	"github.com/Caknoooo/go-gin-clean-starter/utils"
 	"os"
 	"time"
 
-	"github.com/Caknoooo/go-gin-clean-starter/tests/integration/container"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gorm.io/gorm"
+
+	"github.com/Caknoooo/go-gin-clean-starter/tests/integration/container"
+	"github.com/Caknoooo/go-gin-clean-starter/utils"
 )
 
+// EmailIntegrationTestSuite is a test suite for verifying email integration using SMTP and a test database environment.
+// It sets up and tears down the required containers for database and SMTP server during the test lifecycle.
 type EmailIntegrationTestSuite struct {
 	suite.Suite
 	smtpContainer testcontainers.Container
@@ -22,15 +25,14 @@ type EmailIntegrationTestSuite struct {
 	db            *gorm.DB
 }
 
+// SetupSuite initializes and configures the test environment, including database and SMTP containers with necessary settings.
 func (suite *EmailIntegrationTestSuite) SetupSuite() {
 	ctx := context.Background()
 
-	// Start PostgreSQL container
 	dbContainer, err := container.StartTestContainer()
 	require.NoError(suite.T(), err)
 	suite.dbContainer = dbContainer
 
-	// Set database environment variables
 	err = os.Setenv("DB_HOST", dbContainer.Host)
 	if err != nil {
 		panic(err)
@@ -52,10 +54,8 @@ func (suite *EmailIntegrationTestSuite) SetupSuite() {
 		panic(err)
 	}
 
-	// Set up database connection
 	suite.db = container.SetUpDatabaseConnection()
 
-	// Start MailHog SMTP container
 	smtpReq := testcontainers.ContainerRequest{
 		Image:        "mailhog/mailhog",
 		ExposedPorts: []string{"1025/tcp", "8025/tcp"},
@@ -70,14 +70,12 @@ func (suite *EmailIntegrationTestSuite) SetupSuite() {
 	require.NoError(suite.T(), err)
 	suite.smtpContainer = smtpContainer
 
-	// Get SMTP container host and ports
 	smtpHost, err := smtpContainer.Host(ctx)
 	require.NoError(suite.T(), err)
 
 	smtpPort, err := smtpContainer.MappedPort(ctx, "1025")
 	require.NoError(suite.T(), err)
 
-	// Set SMTP environment variables
 	err = os.Setenv("SMTP_HOST", smtpHost)
 	if err != nil {
 		panic(err)
@@ -100,11 +98,11 @@ func (suite *EmailIntegrationTestSuite) SetupSuite() {
 	}
 }
 
+// TearDownSuite cleans up the test environment by unsetting environment variables, closing database connections, and stopping containers.
 func (suite *EmailIntegrationTestSuite) TearDownSuite() {
 	ctx := context.Background()
 	timeout := 10 * time.Second
 
-	// Clean up environment variables
 	for _, env := range []string{
 		"DB_HOST", "DB_PORT", "DB_USER", "DB_PASS", "DB_NAME",
 		"SMTP_HOST", "SMTP_PORT", "SMTP_AUTH_EMAIL", "SMTP_AUTH_PASSWORD", "SMTP_SENDER_NAME",
@@ -115,13 +113,11 @@ func (suite *EmailIntegrationTestSuite) TearDownSuite() {
 		}
 	}
 
-	// Close database connection
 	if suite.db != nil {
 		err := container.CloseDatabaseConnection(suite.db)
 		assert.NoError(suite.T(), err)
 	}
 
-	// Stop containers
 	if suite.smtpContainer != nil {
 		_ = suite.smtpContainer.Stop(ctx, &timeout)
 	}
@@ -130,6 +126,7 @@ func (suite *EmailIntegrationTestSuite) TearDownSuite() {
 	}
 }
 
+// TestSendMail_Integration validates the behavior of the SendMail function using integration tests with different scenarios.
 func (suite *EmailIntegrationTestSuite) TestSendMail_Integration() {
 	tests := []struct {
 		name      string

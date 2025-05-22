@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestHashPassword tests the functionality of the HashPassword function for various input scenarios and potential edge cases.
 func TestHashPassword(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -20,7 +21,7 @@ func TestHashPassword(t *testing.T) {
 		{
 			name:        "empty password",
 			password:    "",
-			expectError: false, // bcrypt allows empty passwords
+			expectError: false,
 		},
 		{
 			name:        "password at bcrypt limit (72 bytes)",
@@ -45,23 +46,21 @@ func TestHashPassword(t *testing.T) {
 				} else {
 					assert.NoError(t, err)
 					assert.NotEmpty(t, hash)
-					// Verify the hash is in bcrypt format
-					assert.Greater(t, len(hash), 10) // bcrypt hashes are typically 60 chars
+					assert.Greater(t, len(hash), 10)
 				}
 			},
 		)
 	}
 }
 
+// TestCheckPassword verifies the CheckPassword function logic with a variety of test cases, including edge cases and errors.
 func TestCheckPassword(t *testing.T) {
-	// First create some valid hashes to test against
 	validHash, err := HashPassword("correctPassword")
 	assert.NoError(t, err)
 
 	emptyHash, err := HashPassword("")
 	assert.NoError(t, err)
 
-	// Create a hash of a 72-byte password
 	maxLenHash, err := HashPassword("this-is-72-bytes-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
 	assert.NoError(t, err)
 
@@ -133,6 +132,7 @@ func TestCheckPassword(t *testing.T) {
 	}
 }
 
+// TestHashAndCheckPasswordIntegration tests end-to-end password hashing and validation for various input scenarios.
 func TestHashAndCheckPasswordIntegration(t *testing.T) {
 	testCases := []struct {
 		name     string
@@ -155,7 +155,6 @@ func TestHashAndCheckPasswordIntegration(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(
 			tc.name, func(t *testing.T) {
-				// Test the full cycle: hash then verify
 				hash, err := HashPassword(tc.password)
 				if len(tc.password) > 72 {
 					assert.Error(t, err)
@@ -165,12 +164,10 @@ func TestHashAndCheckPasswordIntegration(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotEmpty(t, hash)
 
-				// Check with correct password
 				result, err := CheckPassword(hash, []byte(tc.password))
 				assert.NoError(t, err)
 				assert.True(t, result)
 
-				// Check with incorrect password
 				result, err = CheckPassword(hash, []byte("wrongPassword"))
 				assert.Error(t, err)
 				assert.False(t, result)

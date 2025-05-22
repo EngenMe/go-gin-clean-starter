@@ -9,28 +9,26 @@ import (
 	"strings"
 )
 
+// PATH specifies the base directory where files will be stored or accessed.
 var PATH = "assets"
 
+// UploadFile saves the uploaded file to the specified path, creating necessary directories if they don't exist.
+// It takes a file header and a file path as parameters, returning an error if any operation fails.
 func UploadFile(file *multipart.FileHeader, path string) error {
-	// Split the path and get the file ID (last part)
 	parts := strings.Split(path, "/")
 	if len(parts) < 1 {
 		return fmt.Errorf("invalid path: %s", path)
 	}
 	fileID := parts[len(parts)-1]
-	// Directory is all parts except the last one
 	dirParts := parts[:len(parts)-1]
 	dirPath := filepath.Join(PATH, filepath.Join(dirParts...))
 
-	// Create the directory structure if it doesn't exist
 	if err := os.MkdirAll(dirPath, 0755); err != nil {
 		return err
 	}
 
-	// Construct the full file path
 	filePath := filepath.Join(dirPath, fileID)
 
-	// Open the uploaded file
 	uploadedFile, err := file.Open()
 	if err != nil {
 		return err
@@ -42,7 +40,6 @@ func UploadFile(file *multipart.FileHeader, path string) error {
 		}
 	}(uploadedFile)
 
-	// Create the target file
 	targetFile, err := os.Create(filePath)
 	if err != nil {
 		return err
@@ -54,7 +51,6 @@ func UploadFile(file *multipart.FileHeader, path string) error {
 		}
 	}(targetFile)
 
-	// Copy file contents
 	_, err = io.Copy(targetFile, uploadedFile)
 	if err != nil {
 		return err
@@ -63,6 +59,7 @@ func UploadFile(file *multipart.FileHeader, path string) error {
 	return nil
 }
 
+// GetExtensions extracts and returns the file extension from a given filename after the last dot.
 func GetExtensions(filename string) string {
 	return strings.Split(filename, ".")[len(strings.Split(filename, "."))-1]
 }

@@ -1,13 +1,15 @@
 package provider
 
 import (
+	"github.com/samber/do"
+	"gorm.io/gorm"
+
 	"github.com/Caknoooo/go-gin-clean-starter/config"
 	"github.com/Caknoooo/go-gin-clean-starter/constants"
 	"github.com/Caknoooo/go-gin-clean-starter/service"
-	"github.com/samber/do"
-	"gorm.io/gorm"
 )
 
+// InitDatabase configures and registers the main database instance into the dependency injection container.
 func InitDatabase(injector *do.Injector) {
 	do.ProvideNamed(
 		injector, constants.DB, func(i *do.Injector) (*gorm.DB, error) {
@@ -16,6 +18,7 @@ func InitDatabase(injector *do.Injector) {
 	)
 }
 
+// RegisterDependencies encapsulates the registration of all necessary application dependencies into the dependency injector.
 var RegisterDependencies = func(injector *do.Injector) {
 	InitDatabase(injector)
 

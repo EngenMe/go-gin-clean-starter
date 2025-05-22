@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// RefreshToken represents a model for storing refresh token information associated with a user.
 type RefreshToken struct {
 	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
 	UserID    uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`

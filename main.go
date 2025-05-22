@@ -15,22 +15,22 @@
 package main
 
 import (
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	"log"
 	"os"
 
+	"github.com/common-nighthawk/go-figure"
+	"github.com/gin-gonic/gin"
+	"github.com/samber/do"
+	"github.com/swaggo/files"
+	"github.com/swaggo/gin-swagger"
+
 	"github.com/Caknoooo/go-gin-clean-starter/command"
-	_ "github.com/Caknoooo/go-gin-clean-starter/docs"
 	"github.com/Caknoooo/go-gin-clean-starter/middleware"
 	"github.com/Caknoooo/go-gin-clean-starter/provider"
 	"github.com/Caknoooo/go-gin-clean-starter/routes"
-	"github.com/samber/do"
-
-	"github.com/common-nighthawk/go-figure"
-	"github.com/gin-gonic/gin"
 )
 
+// args is responsible for processing command-line arguments and determining whether the application should proceed or exit.
 var args = func(injector *do.Injector) bool {
 	if len(os.Args) > 1 {
 		flag := command.Commands(injector)
@@ -40,6 +40,7 @@ var args = func(injector *do.Injector) bool {
 	return true
 }
 
+// run is a variable that defines a function to configure and run a Gin server with the specified routes and settings.
 var run = func(server *gin.Engine) {
 	server.Static("/assets", "./assets")
 
@@ -71,6 +72,7 @@ var run = func(server *gin.Engine) {
 	}
 }
 
+// main initializes the application, sets up dependencies, configures middleware, registers routes, and starts the server.
 func main() {
 	var (
 		injector = do.New()
@@ -85,7 +87,6 @@ func main() {
 	server := gin.Default()
 	server.Use(middleware.CORSMiddleware())
 
-	// routes
 	routes.RegisterRoutes(server, injector)
 
 	run(server)

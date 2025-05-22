@@ -11,10 +11,12 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// LogDir specifies the default directory path for storing query log files.
 var (
 	LogDir = "./config/logs/query_log"
 )
 
+// SetupLogger configures and returns a new logger.Interface implementation for logging SQL queries and operations.
 func SetupLogger() logger.Interface {
 	if err := os.MkdirAll(LogDir, 0755); err != nil {
 		log.Fatalf("failed to create log directory: %v", err)

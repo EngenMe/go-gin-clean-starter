@@ -12,16 +12,18 @@ import (
 	"gorm.io/gorm"
 )
 
+// TestDatabaseContainer wraps a testcontainers.Container with additional fields for Host and Port configuration.
 type TestDatabaseContainer struct {
 	testcontainers.Container
 	Host string
 	Port string
 }
 
+// StartTestContainer creates and starts a PostgreSQL test container and returns a TestDatabaseContainer with connection info.
+// Returns an error if the container fails to start or retrieve connection details.
 func StartTestContainer() (*TestDatabaseContainer, error) {
 	ctx := context.Background()
 
-	// Set up the container request
 	req := testcontainers.ContainerRequest{
 		Image:        "postgres:13-alpine",
 		ExposedPorts: []string{"5432/tcp"},
@@ -35,7 +37,6 @@ func StartTestContainer() (*TestDatabaseContainer, error) {
 			WithStartupTimeout(30 * time.Second),
 	}
 
-	// Start the container
 	container, err := testcontainers.GenericContainer(
 		ctx, testcontainers.GenericContainerRequest{
 			ContainerRequest: req,
@@ -46,13 +47,11 @@ func StartTestContainer() (*TestDatabaseContainer, error) {
 		return nil, fmt.Errorf("failed to start container: %w", err)
 	}
 
-	// Get the mapped port
 	mappedPort, err := container.MappedPort(ctx, "5432")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get container port: %w", err)
 	}
 
-	// Get the container host
 	host, err := container.Host(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get container host: %w", err)
@@ -65,13 +64,14 @@ func StartTestContainer() (*TestDatabaseContainer, error) {
 	}, nil
 }
 
+// Stop stops the running container with a specified timeout and releases its resources. It returns an error if unable to stop.
 func (c *TestDatabaseContainer) Stop() error {
 	ctx := context.Background()
 	timeout := 10 * time.Second
 	return c.Container.Stop(ctx, &timeout)
 }
 
-// CloseDatabaseConnection closes the GORM database connection.
+// CloseDatabaseConnection safely closes the underlying database connection from the provided *gorm.DB instance.
 func CloseDatabaseConnection(db *gorm.DB) error {
 	dbSQL, err := db.DB()
 	if err != nil {
@@ -80,9 +80,9 @@ func CloseDatabaseConnection(db *gorm.DB) error {
 	return dbSQL.Close()
 }
 
-// SetUpDatabaseConnection establishes a GORM database connection to the test container.
+// SetUpDatabaseConnection initializes and returns a GORM database connection using environment variables for configuration.
+// It enables the `uuid-ossp` PostgreSQL extension if not already enabled. Panics on connection or setup failure.
 func SetUpDatabaseConnection() *gorm.DB {
-	// Construct the DSN using environment variables set by the test suite
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
 		os.Getenv("DB_HOST"),
@@ -92,13 +92,11 @@ func SetUpDatabaseConnection() *gorm.DB {
 		os.Getenv("DB_PORT"),
 	)
 
-	// Open GORM connection
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic(fmt.Errorf("failed to connect to database: %w", err))
 	}
 
-	// Enable UUID extension
 	err = db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error
 	if err != nil {
 		panic(fmt.Errorf("failed to enable uuid-ossp extension: %w", err))

@@ -2,8 +2,6 @@ package config_test
 
 import (
 	"fmt"
-	"github.com/Caknoooo/go-gin-clean-starter/config"
-	"github.com/Caknoooo/go-gin-clean-starter/tests/integration/container"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,8 +13,12 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"github.com/Caknoooo/go-gin-clean-starter/config"
+	"github.com/Caknoooo/go-gin-clean-starter/tests/integration/container"
 )
 
+// LoggerIntegrationTestSuite is a test suite for verifying database logging and integration functionality.
 type LoggerIntegrationTestSuite struct {
 	suite.Suite
 	dbContainer *container.TestDatabaseContainer
@@ -24,8 +26,8 @@ type LoggerIntegrationTestSuite struct {
 	testLogDir  string
 }
 
+// SetupSuite initializes the test suite by setting up the test environment, database container, and logger configuration.
 func (suite *LoggerIntegrationTestSuite) SetupSuite() {
-	// Setup test log directory
 	suite.testLogDir = "./test_logs_integration"
 	config.LogDir = suite.testLogDir
 	err := os.MkdirAll(suite.testLogDir, 0755)
@@ -33,17 +35,15 @@ func (suite *LoggerIntegrationTestSuite) SetupSuite() {
 		return
 	}
 
-	// Start test database container
-	container, err := container.StartTestContainer()
+	testContainer, err := container.StartTestContainer()
 	require.NoError(suite.T(), err)
-	suite.dbContainer = container
+	suite.dbContainer = testContainer
 
-	// Set environment variables for the test
-	err = os.Setenv("DB_HOST", container.Host)
+	err = os.Setenv("DB_HOST", testContainer.Host)
 	if err != nil {
 		panic(err)
 	}
-	err = os.Setenv("DB_PORT", container.Port)
+	err = os.Setenv("DB_PORT", testContainer.Port)
 	if err != nil {
 		panic(err)
 	}
@@ -60,7 +60,6 @@ func (suite *LoggerIntegrationTestSuite) SetupSuite() {
 		panic(err)
 	}
 
-	// Setup database connection with logger
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
 		os.Getenv("DB_HOST"),
@@ -77,13 +76,12 @@ func (suite *LoggerIntegrationTestSuite) SetupSuite() {
 	)
 	require.NoError(suite.T(), err)
 
-	// Enable UUID extension
 	err = suite.db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error
 	require.NoError(suite.T(), err)
 }
 
+// TearDownSuite cleans up resources used during the test suite, including database connections, environment variables, and logs.
 func (suite *LoggerIntegrationTestSuite) TearDownSuite() {
-	// Close database connection
 	if suite.db != nil {
 		sqlDB, err := suite.db.DB()
 		if err == nil {
@@ -94,7 +92,6 @@ func (suite *LoggerIntegrationTestSuite) TearDownSuite() {
 		}
 	}
 
-	// Stop container
 	if suite.dbContainer != nil {
 		err := suite.dbContainer.Stop()
 		if err != nil {
@@ -102,7 +99,6 @@ func (suite *LoggerIntegrationTestSuite) TearDownSuite() {
 		}
 	}
 
-	// Clean up environment
 	err := os.Unsetenv("DB_HOST")
 	if err != nil {
 		panic(err)
@@ -124,15 +120,14 @@ func (suite *LoggerIntegrationTestSuite) TearDownSuite() {
 		panic(err)
 	}
 
-	// Clean up test log directory
 	err = os.RemoveAll(suite.testLogDir)
 	if err != nil {
 		panic(err)
 	}
 }
 
+// TestLoggerWithDatabaseOperations verifies that database operations are logged correctly and log files are properly generated.
 func (suite *LoggerIntegrationTestSuite) TestLoggerWithDatabaseOperations() {
-	// Create a simple table for testing
 	type TestModel struct {
 		ID   uint `gorm:"primaryKey"`
 		Name string
@@ -141,7 +136,6 @@ func (suite *LoggerIntegrationTestSuite) TestLoggerWithDatabaseOperations() {
 	err := suite.db.AutoMigrate(&TestModel{})
 	require.NoError(suite.T(), err)
 
-	// Perform operations that should be logged
 	tests := []struct {
 		name string
 		op   func() error
@@ -181,7 +175,6 @@ func (suite *LoggerIntegrationTestSuite) TestLoggerWithDatabaseOperations() {
 		)
 	}
 
-	// Verify log file was written to
 	currentMonth := strings.ToLower(time.Now().Format("January"))
 	logFileName := fmt.Sprintf("%s_query.log", currentMonth)
 	logPath := filepath.Join(suite.testLogDir, logFileName)
@@ -189,11 +182,9 @@ func (suite *LoggerIntegrationTestSuite) TestLoggerWithDatabaseOperations() {
 	fileInfo, err := os.Stat(logPath)
 	require.NoError(suite.T(), err)
 	assert.Greater(suite.T(), fileInfo.Size(), int64(0))
-
-	// Optionally: read the file and verify contents contain expected log entries
-	// This would be more complex and might need regex matching
 }
 
+// TestLoggerIntegrationTestSuite runs the LoggerIntegrationTestSuite to verify database logging and integration functionality.
 func TestLoggerIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(LoggerIntegrationTestSuite))
 }

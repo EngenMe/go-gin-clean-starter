@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 
 	"github.com/Caknoooo/go-gin-clean-starter/constants"
@@ -19,10 +20,21 @@ import (
 	"github.com/Caknoooo/go-gin-clean-starter/helpers"
 	"github.com/Caknoooo/go-gin-clean-starter/repository"
 	"github.com/Caknoooo/go-gin-clean-starter/utils"
-	"github.com/google/uuid"
 )
 
 type (
+	// UserService defines the methods required for managing user operations and authentication.
+	// Register creates a new user with the provided creation request.
+	// GetAllUserWithPagination retrieves paginated lists of users based on the request criteria.
+	// GetUserById fetches user details using a specific user ID.
+	// GetUserByEmail retrieves user details using their email address.
+	// SendVerificationEmail sends a verification email to the specified user.
+	// VerifyEmail processes email verification requests and returns a response.
+	// Update modifies user information based on the update request and user ID.
+	// Delete removes a user from the system using their user ID.
+	// Verify authenticates a user and generates a token based on login request details.
+	// RefreshToken generates a new access token using a valid refresh token.
+	// RevokeRefreshToken revokes all refresh tokens for a specified user ID.
 	UserService interface {
 		Register(ctx context.Context, req dto.UserCreateRequest) (dto.UserResponse, error)
 		GetAllUserWithPagination(ctx context.Context, req dto.PaginationRequest) (dto.UserPaginationResponse, error)
@@ -37,6 +49,7 @@ type (
 		RevokeRefreshToken(ctx context.Context, userID string) error
 	}
 
+	// userService is a struct that implements the UserService interface and manages user-related operations.
 	userService struct {
 		userRepo         repository.UserRepository
 		refreshTokenRepo repository.RefreshTokenRepository
@@ -45,6 +58,7 @@ type (
 	}
 )
 
+// NewUserService initializes and returns a new instance of UserService with the provided dependencies.
 func NewUserService(
 	userRepo repository.UserRepository,
 	refreshTokenRepo repository.RefreshTokenRepository,
@@ -60,18 +74,22 @@ func NewUserService(
 }
 
 const (
-	LOCAL_URL          = "http://localhost:3000"
+	// LOCAL_URL defines the base URL used for local development, pointing to the localhost server running on port 3000.
+	LOCAL_URL = "http://localhost:3000"
+
+	// VERIFY_EMAIL_ROUTE specifies the endpoint for email verification during the user registration process.
 	VERIFY_EMAIL_ROUTE = "register/verify_email"
 )
 
+// SafeRollback ensures that a transaction is safely rolled back in case of a panic and re-panics after rollback.
 func SafeRollback(tx *gorm.DB) {
 	if r := recover(); r != nil {
 		tx.Rollback()
-		// TODO: Do you think that we should panic here?
-		// panic(r)
+		panic(r)
 	}
 }
 
+// Register handles user registration by creating a new user, verifying email uniqueness, and sending a verification email.
 func (s *userService) Register(ctx context.Context, req dto.UserCreateRequest) (dto.UserResponse, error) {
 	var filename string
 
@@ -130,6 +148,8 @@ func (s *userService) Register(ctx context.Context, req dto.UserCreateRequest) (
 	}, nil
 }
 
+// makeVerificationEmail generates a verification email draft with a secure token embedded in the verification link.
+// It returns a map containing the subject and body of the email or an error if the operation fails.
 func makeVerificationEmail(receiverEmail string) (map[string]string, error) {
 	expired := time.Now().Add(time.Hour * 24).Format("2006-01-02 15:04:05")
 	plainText := receiverEmail + "_" + expired
@@ -140,6 +160,7 @@ func makeVerificationEmail(receiverEmail string) (map[string]string, error) {
 
 	verifyLink := LOCAL_URL + "/" + VERIFY_EMAIL_ROUTE + "?token=" + token
 
+	// TODO
 	templatePath := "utils/email-template/base_mail.html"
 	projectPath, err := helpers.GetProjectRoot()
 	if err != nil {
@@ -177,6 +198,8 @@ func makeVerificationEmail(receiverEmail string) (map[string]string, error) {
 	return draftEmail, nil
 }
 
+// SendVerificationEmail sends a verification email to the user specified in the request.
+// It retrieves the user by email, creates a verification email draft, and sends the email.
 func (s *userService) SendVerificationEmail(ctx context.Context, req dto.SendVerificationEmailRequest) error {
 	user, err := s.userRepo.GetUserByEmail(ctx, nil, req.Email)
 	if err != nil {
@@ -196,6 +219,7 @@ func (s *userService) SendVerificationEmail(ctx context.Context, req dto.SendVer
 	return nil
 }
 
+// VerifyEmail verifies a user's email using a token, updating the user's verified status if the token is valid and unexpired.
 func (s *userService) VerifyEmail(ctx context.Context, req dto.VerifyEmailRequest) (dto.VerifyEmailResponse, error) {
 	decryptedToken, err := utils.AESDecrypt(req.Token)
 	if err != nil {
@@ -248,6 +272,7 @@ func (s *userService) VerifyEmail(ctx context.Context, req dto.VerifyEmailReques
 	}, nil
 }
 
+// GetAllUserWithPagination retrieves paginated user data based on the provided pagination request and context.
 func (s *userService) GetAllUserWithPagination(
 	ctx context.Context,
 	req dto.PaginationRequest,
@@ -283,6 +308,7 @@ func (s *userService) GetAllUserWithPagination(
 	}, nil
 }
 
+// GetUserById retrieves a user by their ID and returns a UserResponse or an error if the operation fails.
 func (s *userService) GetUserById(ctx context.Context, userId string) (dto.UserResponse, error) {
 	user, err := s.userRepo.GetUserById(ctx, nil, userId)
 	if err != nil {
@@ -300,6 +326,7 @@ func (s *userService) GetUserById(ctx context.Context, userId string) (dto.UserR
 	}, nil
 }
 
+// GetUserByEmail retrieves a user by their email address and returns a UserResponse or an error if the operation fails.
 func (s *userService) GetUserByEmail(ctx context.Context, email string) (dto.UserResponse, error) {
 	emails, err := s.userRepo.GetUserByEmail(ctx, nil, email)
 	if err != nil {
@@ -317,6 +344,7 @@ func (s *userService) GetUserByEmail(ctx context.Context, email string) (dto.Use
 	}, nil
 }
 
+// Update modifies user details based on the provided request data and user ID, returning the updated user or an error.
 func (s *userService) Update(ctx context.Context, req dto.UserUpdateRequest, userId string) (
 	dto.UserUpdateResponse,
 	error,
@@ -349,6 +377,7 @@ func (s *userService) Update(ctx context.Context, req dto.UserUpdateRequest, use
 	}, nil
 }
 
+// Delete removes a user and their associated refresh tokens from the database, ensuring proper error handling and rollback.
 func (s *userService) Delete(ctx context.Context, userId string) error {
 	tx := s.db.Begin()
 	defer SafeRollback(tx)
@@ -359,13 +388,11 @@ func (s *userService) Delete(ctx context.Context, userId string) error {
 		return dto.ErrUserNotFound
 	}
 
-	// Delete user's refresh tokens first
 	if err := s.refreshTokenRepo.DeleteByUserID(ctx, tx, user.ID.String()); err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to delete refresh tokens: %w", err)
 	}
 
-	// Then delete the user
 	err = s.userRepo.Delete(ctx, tx, user.ID.String())
 	if err != nil {
 		tx.Rollback()
@@ -375,6 +402,7 @@ func (s *userService) Delete(ctx context.Context, userId string) error {
 	return tx.Commit().Error
 }
 
+// Verify authenticates a user by validating their credentials, generating tokens, and saving the refresh token to the database.
 func (s *userService) Verify(ctx context.Context, req dto.UserLoginRequest) (dto.TokenResponse, error) {
 	tx := s.db.Begin()
 	defer SafeRollback(tx)
@@ -427,18 +455,17 @@ func (s *userService) Verify(ctx context.Context, req dto.UserLoginRequest) (dto
 	}, nil
 }
 
+// RefreshToken refreshes the user's access and refresh tokens using a valid refresh token, ensuring proper validation and handling.
 func (s *userService) RefreshToken(ctx context.Context, req dto.RefreshTokenRequest) (dto.TokenResponse, error) {
 	tx := s.db.Begin()
 	defer SafeRollback(tx)
 
-	// Find the refresh token in the database with the raw token
 	dbToken, err := s.refreshTokenRepo.FindByToken(ctx, tx, req.RefreshToken)
 	if err != nil {
 		tx.Rollback()
 		return dto.TokenResponse{}, errors.New(dto.MESSAGE_FAILED_INVALID_REFRESH_TOKEN)
 	}
 
-	// Check if the token is expired
 	if time.Now().After(dbToken.ExpiresAt) {
 		tx.Rollback()
 		return dto.TokenResponse{}, errors.New(dto.MESSAGE_FAILED_EXPIRED_REFRESH_TOKEN)
@@ -481,24 +508,22 @@ func (s *userService) RefreshToken(ctx context.Context, req dto.RefreshTokenRequ
 	}, nil
 }
 
+// RevokeRefreshToken revokes all refresh tokens associated with a user by their ID, ensuring proper transaction handling.
 func (s *userService) RevokeRefreshToken(ctx context.Context, userID string) error {
 	tx := s.db.Begin()
 	defer SafeRollback(tx)
 
-	// Check if user exists
 	_, err := s.userRepo.GetUserById(ctx, tx, userID)
 	if err != nil {
 		tx.Rollback()
 		return dto.ErrUserNotFound
 	}
 
-	// Delete all refresh tokens for the user
 	if err := s.refreshTokenRepo.DeleteByUserID(ctx, tx, userID); err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	// Commit transaction
 	if err := tx.Commit().Error; err != nil {
 		return err
 	}

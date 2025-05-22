@@ -5,6 +5,7 @@ import (
 	"strconv"
 )
 
+// EmailConfig holds the configuration details for connecting to an email server, including host, port, and credentials.
 type EmailConfig struct {
 	Host         string
 	Port         int
@@ -13,6 +14,7 @@ type EmailConfig struct {
 	AuthPassword string
 }
 
+// NewEmailConfig initializes and returns an EmailConfig instance by reading and validating necessary environment variables.
 var NewEmailConfig = func() (*EmailConfig, error) {
 	port, err := strconv.Atoi(getEnv("SMTP_PORT", "587"))
 	if err != nil {
@@ -27,7 +29,6 @@ var NewEmailConfig = func() (*EmailConfig, error) {
 		AuthPassword: getEnv("SMTP_AUTH_PASSWORD", ""),
 	}
 
-	// Validate required fields
 	if config.Host == "" || config.AuthEmail == "" || config.AuthPassword == "" {
 		return nil, fmt.Errorf("email configuration is incomplete")
 	}

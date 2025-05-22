@@ -3,11 +3,13 @@ package repository
 import (
 	"testing"
 
-	"github.com/Caknoooo/go-gin-clean-starter/dto"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
+
+	"github.com/Caknoooo/go-gin-clean-starter/dto"
 )
 
+// TestPaginate tests the Paginate function to ensure it correctly calculates and applies offset and limit to a Gorm query.
 func TestPaginate(t *testing.T) {
 	var tests []struct {
 		name     string
@@ -21,17 +23,14 @@ func TestPaginate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				// Initialize gorm.DB with a properly initialized Statement
 				db := &gorm.DB{
 					Statement: &gorm.Statement{
-						Vars: make([]interface{}, 0), // Initialize as empty slice
+						Vars: make([]interface{}, 0),
 					},
 				}
 
-				// Apply pagination
 				result := Paginate(tt.req)(db)
 
-				// Assert offset and limit
 				assert.Equal(t, tt.expected.offset, result.Statement.Offset)
 				assert.Equal(t, tt.expected.limit, result.Statement.Limit)
 			},
@@ -39,6 +38,7 @@ func TestPaginate(t *testing.T) {
 	}
 }
 
+// TestTotalPage validates the TotalPage function by testing various scenarios for item counts and items per page.
 func TestTotalPage(t *testing.T) {
 	tests := []struct {
 		name     string

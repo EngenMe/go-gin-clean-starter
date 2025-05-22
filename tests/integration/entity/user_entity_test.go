@@ -1,34 +1,33 @@
 package entity_test
 
 import (
-	"github.com/Caknoooo/go-gin-clean-starter/entity"
 	"os"
 	"testing"
 
-	"github.com/Caknoooo/go-gin-clean-starter/tests/integration/container"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
+
+	"github.com/Caknoooo/go-gin-clean-starter/entity"
+	"github.com/Caknoooo/go-gin-clean-starter/tests/integration/container"
 )
 
+// TestMain sets up the environment for integration tests by initializing a test container and configuring database variables.
+// It ensures proper cleanup by stopping the test container after tests have run.
 func TestMain(m *testing.M) {
-	// Start the test container
 	testContainer, err := container.StartTestContainer()
 	if err != nil {
 		panic(err)
 	}
 
-	// Set environment variables for database connection
 	os.Setenv("DB_HOST", testContainer.Host)
 	os.Setenv("DB_USER", "testuser")
 	os.Setenv("DB_PASS", "testpassword")
 	os.Setenv("DB_NAME", "testdb")
 	os.Setenv("DB_PORT", testContainer.Port)
 
-	// Run tests
 	code := m.Run()
 
-	// Cleanup
 	if err := testContainer.Stop(); err != nil {
 		panic(err)
 	}
@@ -36,10 +35,11 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+// setupTestDB initializes a test database connection, migrates the User schema, and returns the database instance.
+// It fails the test if the database migration encounters an error.
 func setupTestDB(t *testing.T) *gorm.DB {
 	db := container.SetUpDatabaseConnection()
 
-	// Migrate the User schema
 	err := db.AutoMigrate(&entity.User{})
 	if err != nil {
 		t.Fatalf("Failed to migrate database: %v", err)
@@ -48,19 +48,19 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
+// cleanupTestDB cleans up the test database by dropping the User table and closing the database connection.
 func cleanupTestDB(t *testing.T, db *gorm.DB) {
-	// Drop the User table
 	err := db.Migrator().DropTable(&entity.User{})
 	if err != nil {
 		t.Fatalf("Failed to drop table: %v", err)
 	}
 
-	// Close the database connection
 	if err := container.CloseDatabaseConnection(db); err != nil {
 		t.Fatalf("Failed to close database connection: %v", err)
 	}
 }
 
+// TestUser_Integration_Create tests the integration for creating a user, validating correct behavior and handling edge cases.
 func TestUser_Integration_Create(t *testing.T) {
 	db := setupTestDB(t)
 	defer cleanupTestDB(t, db)
@@ -83,7 +83,6 @@ func TestUser_Integration_Create(t *testing.T) {
 			},
 			expectError: false,
 			validate: func(t *testing.T, user *entity.User, db *gorm.DB) {
-				// Verify the user was saved
 				var savedUser entity.User
 				err := db.Where("email = ?", user.Email).First(&savedUser).Error
 				assert.NoError(t, err, "User should exist in the database")
@@ -124,7 +123,6 @@ func TestUser_Integration_Create(t *testing.T) {
 		},
 	}
 
-	// Create a user with the same email for the duplicate email test
 	db.Create(
 		&entity.User{
 			Name:       "Existing User",
@@ -150,11 +148,11 @@ func TestUser_Integration_Create(t *testing.T) {
 	}
 }
 
+// TestUser_Integration_Update tests the integration of updating a User entity in the database, validating correct functionality.
 func TestUser_Integration_Update(t *testing.T) {
 	db := setupTestDB(t)
 	defer cleanupTestDB(t, db)
 
-	// Create a test user
 	user := &entity.User{
 		Name:       "John Doe",
 		Email:      "john@example.com",

@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestGetProjectRoot tests the behavior of the GetProjectRoot function, including success and various error scenarios.
 func TestGetProjectRoot(t *testing.T) {
-	// Save the original function to restore it later
 	originalGetProjectRoot := GetProjectRoot
 	defer func() {
 		GetProjectRoot = originalGetProjectRoot
@@ -18,24 +18,19 @@ func TestGetProjectRoot(t *testing.T) {
 
 	t.Run(
 		"successful discovery of project root", func(t *testing.T) {
-			// Create a temporary directory structure
 			tmpDir, err := os.MkdirTemp("", "project-root-test-*")
 			require.NoError(t, err)
 			defer os.RemoveAll(tmpDir)
 
-			// Create a go.mod file in the temporary directory
 			goModPath := filepath.Join(tmpDir, "go.mod")
 			err = os.WriteFile(goModPath, []byte("module test"), 0644)
 			require.NoError(t, err)
 
-			// Create a subdirectory structure to simulate walking up
 			subDir := filepath.Join(tmpDir, "cmd", "app")
 			err = os.MkdirAll(subDir, 0755)
 			require.NoError(t, err)
 
-			// Mock the GetProjectRoot function
 			GetProjectRoot = func() (string, error) {
-				// Simulate starting from the subDir
 				dir := subDir
 				for {
 					if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
@@ -50,7 +45,6 @@ func TestGetProjectRoot(t *testing.T) {
 				}
 			}
 
-			// Test the function
 			root, err := GetProjectRoot()
 			assert.NoError(t, err)
 			assert.Equal(t, tmpDir, root)
@@ -59,12 +53,10 @@ func TestGetProjectRoot(t *testing.T) {
 
 	t.Run(
 		"go.mod not found", func(t *testing.T) {
-			// Mock the GetProjectRoot function to simulate not finding go.mod
 			GetProjectRoot = func() (string, error) {
 				return "", filepath.ErrBadPattern
 			}
 
-			// Test the function
 			root, err := GetProjectRoot()
 			assert.Error(t, err)
 			assert.Empty(t, root)
@@ -73,12 +65,10 @@ func TestGetProjectRoot(t *testing.T) {
 
 	t.Run(
 		"unable to get current file path", func(t *testing.T) {
-			// Mock the GetProjectRoot function to simulate runtime.Caller failure
 			GetProjectRoot = func() (string, error) {
 				return "", filepath.ErrBadPattern
 			}
 
-			// Test the function
 			root, err := GetProjectRoot()
 			assert.Error(t, err)
 			assert.Empty(t, root)
@@ -86,19 +76,16 @@ func TestGetProjectRoot(t *testing.T) {
 	)
 }
 
-// TestActualGetProjectRoot tests the real implementation if in a proper project structure
+// TestActualGetProjectRoot verifies the actual behavior of GetProjectRoot in locating the project root containing go.mod.
+// It skips the test if an appropriate project structure is not found during execution.
 func TestActualGetProjectRoot(t *testing.T) {
-	// Restore the original function
 	originalGetProjectRoot := GetProjectRoot
 
-	// This test only runs in a real project environment
 	root, err := originalGetProjectRoot()
 	if err == nil {
-		// If it worked, we should have a go.mod file in the root
 		_, err := os.Stat(filepath.Join(root, "go.mod"))
 		assert.NoError(t, err, "Expected to find go.mod in project root")
 	} else {
-		// This test might be running in isolation without a project structure
 		t.Skip("Skipping actual project root test (no proper project structure found)")
 	}
 }

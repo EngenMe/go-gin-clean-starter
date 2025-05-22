@@ -1,12 +1,14 @@
 package entity
 
 import (
-	"github.com/Caknoooo/go-gin-clean-starter/helpers"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+
+	"github.com/Caknoooo/go-gin-clean-starter/helpers"
 )
 
+// User represents a system user with authentication and profile information.
 type User struct {
 	ID         uuid.UUID `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
 	Name       string    `gorm:"type:varchar(100);not null" json:"name" validate:"required,min=2,max=100"`
@@ -20,11 +22,11 @@ type User struct {
 	Timestamp
 }
 
+// validate is an instance of a validator used to validate structs based on defined tags.
 var validate = validator.New()
 
-// BeforeCreate hook to hash password and set defaults
+// BeforeCreate is a GORM hook executed before creating a User record to hash the password, set default role, and validate the struct.
 func (u *User) BeforeCreate(_ *gorm.DB) (err error) {
-	// Hash password
 	if u.Password != "" {
 		u.Password, err = helpers.HashPassword(u.Password)
 		if err != nil {
@@ -32,17 +34,14 @@ func (u *User) BeforeCreate(_ *gorm.DB) (err error) {
 		}
 	}
 
-	// Ensure UUID is set
 	if u.ID == uuid.Nil {
 		u.ID = uuid.New()
 	}
 
-	// Set default role if not specified
 	if u.Role == "" {
 		u.Role = "user"
 	}
 
-	// Validate the user
 	if err := validate.Struct(u); err != nil {
 		return err
 	}
@@ -50,9 +49,8 @@ func (u *User) BeforeCreate(_ *gorm.DB) (err error) {
 	return nil
 }
 
-// BeforeUpdate hook to handle password updates
+// BeforeUpdate is a GORM hook executed before updating a User record to hash the password if a new password is provided.
 func (u *User) BeforeUpdate(_ *gorm.DB) (err error) {
-	// Only hash password if it has been changed
 	if u.Password != "" {
 		u.Password, err = helpers.HashPassword(u.Password)
 		if err != nil {

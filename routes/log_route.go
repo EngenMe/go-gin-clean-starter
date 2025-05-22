@@ -12,19 +12,22 @@ import (
 )
 
 var (
+	// LOG_DIR specifies the directory path where query log files are stored.
 	LOG_DIR = "./config/logs/query_log"
 
+	// LOG_HTML represents the filename of the HTML template used to render log data in the application.
 	LOG_HTML = "logs.html"
 )
 
+// LoggerRoute sets up the routes for logging functionality, including rendering logs and viewing logs by month.
 func LoggerRoute(router *gin.Engine) {
-	// Use LoadHTMLFiles instead of LoadHTMLGlob to load a specific file
 	router.LoadHTMLFiles(LOG_HTML)
 
 	router.GET("/logs/:month", Logger)
 	router.GET("/logs", Logger)
 }
 
+// Logger handles HTTP requests to display log files filtered by month, rendering them using a predefined HTML template.
 func Logger(c *gin.Context) {
 	month := c.Param("month")
 	if month == "" {
@@ -96,6 +99,7 @@ func Logger(c *gin.Context) {
 	)
 }
 
+// ReverseSlice reverses the order of elements in a slice of strings and returns the reversed slice.
 func ReverseSlice(input []string) []string {
 	length := len(input)
 	reversed := make([]string, length)

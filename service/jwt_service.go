@@ -12,6 +12,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
+// JWTService defines methods for generating, validating, and extracting information from JWT tokens.
 type JWTService interface {
 	GenerateAccessToken(userId string, role string) string
 	GenerateRefreshToken() (string, time.Time)
@@ -19,12 +20,14 @@ type JWTService interface {
 	GetUserIDByToken(token string) (string, error)
 }
 
+// jwtCustomClaim defines the structure for custom JWT claims, including user ID, role, and registered JWT claims.
 type jwtCustomClaim struct {
 	UserID string `json:"user_id"`
 	Role   string `json:"role"`
 	jwt.RegisteredClaims
 }
 
+// jwtService is a private struct that implements the JWTService interface for managing and validating JWT tokens.
 type jwtService struct {
 	secretKey     string
 	issuer        string
@@ -32,6 +35,7 @@ type jwtService struct {
 	refreshExpiry time.Duration
 }
 
+// NewJWTService creates and returns a new instance of JWTService with predefined configurations.
 func NewJWTService() JWTService {
 	return &jwtService{
 		secretKey:     getSecretKey(),
@@ -41,6 +45,7 @@ func NewJWTService() JWTService {
 	}
 }
 
+// getSecretKey retrieves the secret key for JWT from the environment variable or returns a default value if unset.
 func getSecretKey() string {
 	secretKey := os.Getenv("JWT_SECRET")
 	if secretKey == "" {
@@ -49,6 +54,7 @@ func getSecretKey() string {
 	return secretKey
 }
 
+// GenerateAccessToken generates a signed JWT access token using the provided user ID and role.
 func (j *jwtService) GenerateAccessToken(userId string, role string) string {
 	claims := jwtCustomClaim{
 		userId,
@@ -68,6 +74,7 @@ func (j *jwtService) GenerateAccessToken(userId string, role string) string {
 	return tx
 }
 
+// GenerateRefreshToken creates a secure random refresh token and calculates its expiration time.
 func (j *jwtService) GenerateRefreshToken() (string, time.Time) {
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
@@ -82,6 +89,7 @@ func (j *jwtService) GenerateRefreshToken() (string, time.Time) {
 	return refreshToken, expiresAt
 }
 
+// parseToken validates the signing method of the JWT token and returns the secret key if the method is valid.
 func (j *jwtService) parseToken(t_ *jwt.Token) (any, error) {
 	if _, ok := t_.Method.(*jwt.SigningMethodHMAC); !ok {
 		return nil, fmt.Errorf("unexpected signing method %v", t_.Header["alg"])
@@ -89,12 +97,12 @@ func (j *jwtService) parseToken(t_ *jwt.Token) (any, error) {
 	return []byte(j.secretKey), nil
 }
 
+// ValidateToken validates a JWT token, checks its structure, signing method, and claims, and returns the parsed token.
 func (j *jwtService) ValidateToken(token string) (*jwt.Token, error) {
 	if token == "" {
 		return nil, fmt.Errorf("token is empty")
 	}
 
-	// First check if the token has the expected number of parts
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("token contains an invalid number of segments")
@@ -102,7 +110,6 @@ func (j *jwtService) ValidateToken(token string) (*jwt.Token, error) {
 
 	parsedToken, err := jwt.ParseWithClaims(
 		token, &jwtCustomClaim{}, func(token *jwt.Token) (interface{}, error) {
-			// Specifically check for SigningMethodHS256
 			if token.Method != jwt.SigningMethodHS256 {
 				return nil, fmt.Errorf("unexpected signing method %v", token.Header["alg"])
 			}
@@ -121,13 +128,13 @@ func (j *jwtService) ValidateToken(token string) (*jwt.Token, error) {
 	return parsedToken, nil
 }
 
+// GetUserIDByToken extracts and returns the user ID from a validated JWT token or an error if the token is invalid.
 func (j *jwtService) GetUserIDByToken(token string) (string, error) {
 	tToken, err := j.ValidateToken(token)
 	if err != nil {
 		return "", err
 	}
 
-	// Get the claims from the token
 	claims, ok := tToken.Claims.(*jwtCustomClaim)
 	if !ok {
 		return "", fmt.Errorf("invalid token claims")

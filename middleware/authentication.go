@@ -4,12 +4,14 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/Caknoooo/go-gin-clean-starter/dto"
 	"github.com/Caknoooo/go-gin-clean-starter/service"
 	"github.com/Caknoooo/go-gin-clean-starter/utils"
-	"github.com/gin-gonic/gin"
 )
 
+// Authenticate validates the JWT token from the Authorization header and sets user data in the context for subsequent use.
 func Authenticate(jwtService service.JWTService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")

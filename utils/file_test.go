@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestUploadFile tests the UploadFile function by validating various file upload scenarios and error cases.
 func TestUploadFile(t *testing.T) {
-	// Setup test directory
 	testDir := "./test_assets"
 	t.Cleanup(
 		func() {
@@ -25,7 +25,6 @@ func TestUploadFile(t *testing.T) {
 		},
 	)
 
-	// Create a test file to upload
 	createTestFile := func(t *testing.T, content string) *multipart.FileHeader {
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
@@ -87,7 +86,6 @@ func TestUploadFile(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				// Replace the constant for testing
 				originalPath := PATH
 				PATH = testDir
 				t.Cleanup(
@@ -113,7 +111,6 @@ func TestUploadFile(t *testing.T) {
 				} else {
 					require.NoError(t, err)
 
-					// Verify file was created
 					parts := strings.Split(tt.path, "/")
 					fileID := parts[len(parts)-1]
 					dirPath := filepath.Join(testDir, strings.Join(parts[:len(parts)-1], "/"))
@@ -122,7 +119,6 @@ func TestUploadFile(t *testing.T) {
 					_, err = os.Stat(filePath)
 					assert.NoError(t, err)
 
-					// Verify file content
 					if tt.fileContent != "" {
 						content, err := os.ReadFile(filePath)
 						require.NoError(t, err)
@@ -139,7 +135,6 @@ func TestUploadFile(t *testing.T) {
 				t.Skip("Skipping test when running as root")
 			}
 
-			// Replace the constant for testing with protected directory
 			originalPath := PATH
 			PATH = "/root/protected_directory"
 			t.Cleanup(
@@ -157,6 +152,7 @@ func TestUploadFile(t *testing.T) {
 	)
 }
 
+// TestGetExtensions validates the behavior of GetExtensions for various filename inputs and expected extensions.
 func TestGetExtensions(t *testing.T) {
 	tests := []struct {
 		name     string

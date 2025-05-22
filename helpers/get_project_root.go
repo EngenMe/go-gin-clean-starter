@@ -7,15 +7,13 @@ import (
 	"runtime"
 )
 
-// GetProjectRoot is a function variable that can be reassigned
+// GetProjectRoot is a variable holding a function to discover the project's root directory by locating the go.mod file.
 var GetProjectRoot = func() (string, error) {
-	// Get the path of the current file
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return "", fmt.Errorf("unable to get current file path")
 	}
 
-	// Start from the current file's directory and walk up until we find go.mod
 	dir := filepath.Dir(filename)
 	for {
 		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {

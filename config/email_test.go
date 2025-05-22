@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestNewEmailConfig validates the behavior of NewEmailConfig by testing various environment variable configurations.
 func TestNewEmailConfig(t *testing.T) {
-	// Setup test cases
 	tests := []struct {
 		name        string
 		envVars     map[string]string
@@ -44,8 +44,8 @@ func TestNewEmailConfig(t *testing.T) {
 			},
 			wantConfig: &EmailConfig{
 				Host:         "smtp.example.com",
-				Port:         587, // default
-				SenderName:   "",  // optional
+				Port:         587,
+				SenderName:   "",
 				AuthEmail:    "user@example.com",
 				AuthPassword: "password123",
 			},
@@ -94,15 +94,14 @@ func TestNewEmailConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				// Set up environment
 				for k, v := range tt.envVars {
 					err := os.Setenv(k, v)
 					if err != nil {
 						panic(err)
 					}
 				}
+
 				defer func() {
-					// Clean up environment
 					for k := range tt.envVars {
 						err := os.Unsetenv(k)
 						if err != nil {
@@ -111,10 +110,8 @@ func TestNewEmailConfig(t *testing.T) {
 					}
 				}()
 
-				// Execute
 				got, err := NewEmailConfig()
 
-				// Verify
 				if tt.wantErr {
 					require.Error(t, err)
 					if tt.errContains != "" {

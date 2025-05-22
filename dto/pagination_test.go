@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestPaginationRequest_GetOffset tests the GetOffset method of the PaginationRequest struct for calculating pagination offsets.
 func TestPaginationRequest_GetOffset(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -53,6 +54,7 @@ func TestPaginationRequest_GetOffset(t *testing.T) {
 	}
 }
 
+// TestPaginationRequest_GetLimit tests the GetLimit function of the PaginationRequest for returning the correct records per page.
 func TestPaginationRequest_GetLimit(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -83,6 +85,7 @@ func TestPaginationRequest_GetLimit(t *testing.T) {
 	}
 }
 
+// TestPaginationRequest_GetPage verifies that the GetPage method of PaginationRequest returns the correct page value.
 func TestPaginationRequest_GetPage(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -113,6 +116,7 @@ func TestPaginationRequest_GetPage(t *testing.T) {
 	}
 }
 
+// TestPaginationRequest_Default verifies the Default behavior of PaginationRequest for setting default Page and PerPage values.
 func TestPaginationRequest_Default(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -164,6 +168,7 @@ func TestPaginationRequest_Default(t *testing.T) {
 	}
 }
 
+// TestPaginationResponse_Fields validates the field values of a PaginationResponse instance.
 func TestPaginationResponse_Fields(t *testing.T) {
 	resp := PaginationResponse{
 		Page:    2,

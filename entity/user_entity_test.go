@@ -3,12 +3,14 @@ package entity
 import (
 	"testing"
 
-	"github.com/Caknoooo/go-gin-clean-starter/helpers"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
+
+	"github.com/Caknoooo/go-gin-clean-starter/helpers"
 )
 
+// TestUser_BeforeCreate tests the BeforeCreate function in the User struct for proper behavior during user instance creation.
 func TestUser_BeforeCreate(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -64,6 +66,7 @@ func TestUser_BeforeCreate(t *testing.T) {
 	}
 }
 
+// TestUser_BeforeUpdate tests the BeforeUpdate GORM hook, ensuring proper password hashing and validation logic is applied.
 func TestUser_BeforeUpdate(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -83,7 +86,6 @@ func TestUser_BeforeUpdate(t *testing.T) {
 			expectError: false,
 			validate: func(t *testing.T, user *User) {
 				assert.NotEqual(t, "newpassword123", user.Password, "Password should be hashed")
-				// Verify the password can be checked
 				_, err := helpers.CheckPassword(user.Password, []byte("newpassword123"))
 				assert.NoError(t, err, "Hashed password should match original")
 			},
@@ -94,7 +96,7 @@ func TestUser_BeforeUpdate(t *testing.T) {
 				ID:       uuid.New(),
 				Name:     "Jane Doe",
 				Email:    "jane@example.com",
-				Password: "", // No password change
+				Password: "",
 				Role:     "admin",
 			},
 			expectError: false,
@@ -119,6 +121,7 @@ func TestUser_BeforeUpdate(t *testing.T) {
 	}
 }
 
+// TestUser_Validation is a unit test for validating User struct fields and ensures errors are returned for invalid inputs.
 func TestUser_Validation(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -183,8 +186,6 @@ func TestUser_Validation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				// Assuming a validation function exists or using a validator library
-				// Here we mock the validation behavior based on struct tags
 				err := validateUser(tt.user)
 				if tt.expectError {
 					assert.Error(t, err, "Expected validation error")
@@ -196,7 +197,7 @@ func TestUser_Validation(t *testing.T) {
 	}
 }
 
-// Mock validation function to simulate struct tag validation
+// validateUser validates the User struct fields and returns an error if any field value is invalid based on specified rules.
 func validateUser(user *User) error {
 	if user.Name == "" || len(user.Name) < 2 || len(user.Name) > 100 {
 		return assert.AnError
@@ -219,12 +220,15 @@ func validateUser(user *User) error {
 	return nil
 }
 
-// Mock helper functions for validation
+// isValidEmail checks if the provided email string is valid based on simple validation rules.
+// Returns true if valid, otherwise false.
 func isValidEmail(email string) bool {
 	// Simplified email validation
 	return email != "" && email != "invalid-email"
 }
 
+// isValidURL checks if the provided URL string is valid based on simple validation rules.
+// Returns true if valid, otherwise false.
 func isValidURL(url string) bool {
 	// Simplified URL validation
 	return url != "" && url != "not-a-url"

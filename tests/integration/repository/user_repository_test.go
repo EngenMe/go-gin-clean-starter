@@ -2,26 +2,28 @@ package repository
 
 import (
 	"context"
-	"github.com/Caknoooo/go-gin-clean-starter/dto"
-	"github.com/Caknoooo/go-gin-clean-starter/repository"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/Caknoooo/go-gin-clean-starter/entity"
-	"github.com/Caknoooo/go-gin-clean-starter/tests/integration/container"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
+
+	"github.com/Caknoooo/go-gin-clean-starter/dto"
+	"github.com/Caknoooo/go-gin-clean-starter/entity"
+	"github.com/Caknoooo/go-gin-clean-starter/repository"
+	"github.com/Caknoooo/go-gin-clean-starter/tests/integration/container"
 )
 
-// Mock DTOs and helper functions for testing
+// PaginationRequest represents parameters for paginated requests, including the page number, items per page, and a search term.
 type PaginationRequest struct {
 	Page    int
 	PerPage int
 	Search  string
 }
 
+// Default sets the default values for Page and PerPage if they are not initialized. Page defaults to 1, and PerPage defaults to 10.
 func (p *PaginationRequest) Default() {
 	if p.Page == 0 {
 		p.Page = 1
@@ -31,6 +33,8 @@ func (p *PaginationRequest) Default() {
 	}
 }
 
+// PaginationResponse represents pagination details for paginated API responses.
+// It includes current page, items per page, total count of items, and the maximum number of pages.
 type PaginationResponse struct {
 	Page    int
 	PerPage int
@@ -38,12 +42,15 @@ type PaginationResponse struct {
 	MaxPage int64
 }
 
+// GetAllUserRepositoryResponse represents a response containing a list of users and pagination details.
 type GetAllUserRepositoryResponse struct {
 	Users              []entity.User
 	PaginationResponse PaginationResponse
 }
 
-// Mock Paginate function
+// Paginate applies pagination logic to a Gorm database query based on the provided PaginationRequest parameters.
+// It calculates the offset and limits the number of records returned per page.
+// Designed to be used as a query function passed to Gorm's chainable methods.
 func Paginate(req PaginationRequest) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		offset := (req.Page - 1) * req.PerPage
@@ -51,7 +58,7 @@ func Paginate(req PaginationRequest) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-// Mock TotalPage function
+// TotalPage calculates the total number of pages based on the given item count and items per page.
 func TotalPage(count, perPage int64) int64 {
 	if perPage == 0 {
 		return 0
@@ -59,8 +66,8 @@ func TotalPage(count, perPage int64) int64 {
 	return (count + perPage - 1) / perPage
 }
 
+// TestUserRepository is a test function for the user repository, ensuring proper functionality of CRUD operations.
 func TestUserRepository(t *testing.T) {
-	// Start test container
 	testContainer, err := container.StartTestContainer()
 	if err != nil {
 		t.Fatalf("failed to start test container: %v", err)
@@ -72,7 +79,6 @@ func TestUserRepository(t *testing.T) {
 		}
 	}(testContainer)
 
-	// Set environment variables for database connection
 	err = os.Setenv("DB_HOST", testContainer.Host)
 	if err != nil {
 		panic(err)
@@ -94,7 +100,6 @@ func TestUserRepository(t *testing.T) {
 		return
 	}
 
-	// Setup database connection
 	db := container.SetUpDatabaseConnection()
 	defer func(db *gorm.DB) {
 		err := container.CloseDatabaseConnection(db)
@@ -103,16 +108,13 @@ func TestUserRepository(t *testing.T) {
 		}
 	}(db)
 
-	// Migrate the schema
 	err = db.AutoMigrate(&entity.User{})
 	if err != nil {
 		t.Fatalf("failed to migrate schema: %v", err)
 	}
 
-	// Initialize repository
 	repo := repository.NewUserRepository(db)
 
-	// Helper function to clean the database
 	cleanDB := func() {
 		err := db.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE").Error
 		if err != nil {
@@ -149,7 +151,6 @@ func TestUserRepository(t *testing.T) {
 	t.Run(
 		"GetAllUserWithPagination", func(t *testing.T) {
 			t.Cleanup(cleanDB)
-			// Create multiple users
 			users := []entity.User{
 				{
 					ID:         uuid.New(),
@@ -182,7 +183,6 @@ func TestUserRepository(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			// Test pagination
 			req := dto.PaginationRequest{
 				Page:    1,
 				PerPage: 1,

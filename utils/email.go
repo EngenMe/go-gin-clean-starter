@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/Caknoooo/go-gin-clean-starter/config"
 	"gopkg.in/gomail.v2"
+
+	"github.com/Caknoooo/go-gin-clean-starter/config"
 )
 
 // Dialer is an interface that matches gomail.Dialer for mocking purposes
@@ -15,6 +16,9 @@ var NewDialer = func(host string, port int, username, password string) Dialer {
 	return gomail.NewDialer(host, port, username, password)
 }
 
+// SendMail sends an email to the specified recipient with a subject and body using pre-configured SMTP settings.
+// It initializes the email configuration, constructs the email message, and sends it using a custom SMTP dialer.
+// Returns an error if any step fails during the process.
 func SendMail(toEmail string, subject string, body string) error {
 	emailConfig, err := config.NewEmailConfig()
 	if err != nil {
@@ -27,7 +31,6 @@ func SendMail(toEmail string, subject string, body string) error {
 	mailer.SetHeader("Subject", subject)
 	mailer.SetBody("text/html", body)
 
-	// Use the NewDialer function instead of directly calling gomail.NewDialer
 	dialer := NewDialer(
 		emailConfig.Host,
 		emailConfig.Port,

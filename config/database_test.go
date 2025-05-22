@@ -4,12 +4,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Caknoooo/go-gin-clean-starter/constants"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/Caknoooo/go-gin-clean-starter/constants"
 )
 
-// Unit tests
+// TestGetEnv verifies the behavior of getEnv function under different conditions using test cases.
 func TestGetEnv(t *testing.T) {
 	t.Run(
 		"Should return value when env exists", func(t *testing.T) {
@@ -31,25 +32,23 @@ func TestGetEnv(t *testing.T) {
 	)
 }
 
+// TestLoadEnv verifies the behavior of the loadEnv function under different scenarios in a test environment.
+// It checks if environment variables are correctly loaded from a .env.test file or if the function panics when the file is missing.
 func TestLoadEnv(t *testing.T) {
 	t.Run(
 		"Should load .env.test file in testing mode", func(t *testing.T) {
-			// Setup
 			originalEnv := os.Getenv("APP_ENV")
 			defer func() {
 				os.Setenv("APP_ENV", originalEnv)
 			}()
 
-			// Create a temporary .env.test file
 			content := "DB_USER=testuser\nDB_PASS=testpass\nDB_NAME=testdb\n"
 			err := os.WriteFile(".env.test", []byte(content), 0644)
 			require.NoError(t, err)
 			defer os.Remove(".env.test")
 
-			// Test
 			loadEnv()
 
-			// Verify
 			assert.Equal(t, "testuser", os.Getenv("DB_USER"))
 			assert.Equal(t, "testpass", os.Getenv("DB_PASS"))
 			assert.Equal(t, "testdb", os.Getenv("DB_NAME"))
@@ -58,7 +57,6 @@ func TestLoadEnv(t *testing.T) {
 
 	t.Run(
 		"Should panic when .env.test file is missing in testing mode", func(t *testing.T) {
-			// Setup
 			originalEnv := os.Getenv("APP_ENV")
 			os.Setenv("APP_ENV", constants.ENUM_RUN_TESTING)
 			defer func() {
@@ -68,10 +66,8 @@ func TestLoadEnv(t *testing.T) {
 				}
 			}()
 
-			// Ensure .env.test doesn't exist
 			os.Remove(".env.test")
 
-			// Test
 			loadEnv()
 		},
 	)

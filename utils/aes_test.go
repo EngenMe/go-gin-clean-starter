@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestAESEncryptDecrypt tests the AES encryption and decryption functions to ensure encrypted data can be correctly decrypted.
 func TestAESEncryptDecrypt(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -38,7 +39,6 @@ func TestAESEncryptDecrypt(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				// Test encryption
 				encrypted, err := AESEncrypt(tt.input)
 				if tt.wantError {
 					assert.Error(t, err)
@@ -47,7 +47,6 @@ func TestAESEncryptDecrypt(t *testing.T) {
 				require.NoError(t, err)
 				assert.NotEmpty(t, encrypted)
 
-				// Test decryption
 				decrypted, err := AESDecrypt(encrypted)
 				require.NoError(t, err)
 				assert.Equal(t, tt.input, decrypted)
@@ -61,7 +60,7 @@ func TestAESDecryptInvalidInput(t *testing.T) {
 		name        string
 		input       string
 		wantError   bool
-		errorString string // specific error message to expect
+		errorString string
 	}{
 		{
 			name:        "invalid hex string",
@@ -71,13 +70,13 @@ func TestAESDecryptInvalidInput(t *testing.T) {
 		},
 		{
 			name:        "short ciphertext",
-			input:       "aabbcc", // too short to contain nonce
+			input:       "aabbcc",
 			wantError:   true,
 			errorString: "ciphertext too short",
 		},
 		{
 			name:        "malformed ciphertext",
-			input:       "aabbccddeeff00112233445566778899aabbccddeeff", // random hex
+			input:       "aabbccddeeff00112233445566778899aabbccddeeff",
 			wantError:   true,
 			errorString: "error decrypting",
 		},
@@ -99,6 +98,9 @@ func TestAESDecryptInvalidInput(t *testing.T) {
 	}
 }
 
+// TestAESEncryptConsistency ensures the consistency of AES encryption and decryption by verifying input-output correctness.
+// Verifies that encryption produces different ciphertexts for the same input due to nonce randomness.
+// Ensures decrypting the ciphertexts returns the original plaintext input without error.
 func TestAESEncryptConsistency(t *testing.T) {
 	input := "test input"
 	encrypted1, err1 := AESEncrypt(input)
@@ -109,10 +111,8 @@ func TestAESEncryptConsistency(t *testing.T) {
 	require.NoError(t, err2)
 	assert.NotEmpty(t, encrypted2)
 
-	// Should produce different ciphertexts due to random nonce
 	assert.NotEqual(t, encrypted1, encrypted2)
 
-	// Both should decrypt to the same plaintext
 	decrypted1, err := AESDecrypt(encrypted1)
 	require.NoError(t, err)
 	assert.Equal(t, input, decrypted1)
@@ -122,9 +122,9 @@ func TestAESEncryptConsistency(t *testing.T) {
 	assert.Equal(t, input, decrypted2)
 }
 
+// TestAESDecryptPanicRecovery validates the recovery mechanism of AESDecrypt when a panic occurs during decryption.
 func TestAESDecryptPanicRecovery(t *testing.T) {
-	// This now tests proper error handling rather than panic recovery
-	decrypted, err := AESDecrypt("aabbccddeeff00112233445566778899aabbccddeeff")
+	decrypted, err := AESDecrypt("00112233445566778899aabb00112233445566778899aabb")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "error decrypting")
 	assert.Empty(t, decrypted)

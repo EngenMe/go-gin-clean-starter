@@ -8,16 +8,18 @@ import (
 	"gorm.io/gorm"
 )
 
-// MockDB is a mock implementation of gorm.DB for testing
+// MockDB is a type that embeds mock.Mock, allowing it to be used for mocking database interactions in tests.
 type MockDB struct {
 	mock.Mock
 }
 
+// GormDB retrieves a *gorm.DB instance, typically used for mocking database interactions in tests.
 func (m *MockDB) GormDB() *gorm.DB {
 	args := m.Called()
 	return args.Get(0).(*gorm.DB)
 }
 
+// TestNewExampleScript verifies that a new ExampleScript instance is correctly initialized with a mocked gorm.DB connection.
 func TestNewExampleScript(t *testing.T) {
 	mockDB := new(MockDB)
 	mockGormDB := &gorm.DB{}
@@ -30,6 +32,7 @@ func TestNewExampleScript(t *testing.T) {
 	mockDB.AssertExpectations(t)
 }
 
+// TestExampleScript_Run tests the Run method of the ExampleScript, validating success and failure scenarios.
 func TestExampleScript_Run(t *testing.T) {
 	tests := []struct {
 		name    string

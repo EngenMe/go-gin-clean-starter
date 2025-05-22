@@ -1,8 +1,6 @@
 package config_test
 
 import (
-	"github.com/Caknoooo/go-gin-clean-starter/config"
-	"github.com/Caknoooo/go-gin-clean-starter/tests/integration/container"
 	"os"
 	"strconv"
 	"testing"
@@ -10,25 +8,28 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/Caknoooo/go-gin-clean-starter/config"
+	"github.com/Caknoooo/go-gin-clean-starter/tests/integration/container"
 )
 
+// EmailConfigTestSuite is a test suite for verifying email configuration using environment variables and test containers.
 type EmailConfigTestSuite struct {
 	suite.Suite
 	emailContainer *container.TestDatabaseContainer
 }
 
+// SetupSuite initializes the test environment by starting a MailHog test container and setting necessary environment variables.
 func (suite *EmailConfigTestSuite) SetupSuite() {
-	// Start MailHog containers
-	container, err := container.StartTestContainer()
+	testContainer, err := container.StartTestContainer()
 	require.NoError(suite.T(), err)
-	suite.emailContainer = container
+	suite.emailContainer = testContainer
 
-	// Set environment variables for tests
-	err = os.Setenv("SMTP_HOST", container.Host)
+	err = os.Setenv("SMTP_HOST", testContainer.Host)
 	if err != nil {
 		panic(err)
 	}
-	err = os.Setenv("SMTP_PORT", container.Port)
+	err = os.Setenv("SMTP_PORT", testContainer.Port)
 	if err != nil {
 		panic(err)
 	}
@@ -46,8 +47,8 @@ func (suite *EmailConfigTestSuite) SetupSuite() {
 	}
 }
 
+// TearDownSuite cleans up test resources by unsetting environment variables and stopping the email test container.
 func (suite *EmailConfigTestSuite) TearDownSuite() {
-	// Clean up environment
 	err := os.Unsetenv("SMTP_HOST")
 	if err != nil {
 		panic(err)
@@ -69,20 +70,19 @@ func (suite *EmailConfigTestSuite) TearDownSuite() {
 		panic(err)
 	}
 
-	// Stop containers
 	if suite.emailContainer != nil {
 		err := suite.emailContainer.Stop()
 		require.NoError(suite.T(), err)
 	}
 }
 
+// TestNewEmailConfig_Integration validates that a new EmailConfig is created correctly using environment variables.
+// Ensures no errors occur and verifies that configuration values match the expected environment variable settings.
 func (suite *EmailConfigTestSuite) TestNewEmailConfig_Integration() {
-	// Test that we can create a valid emailConfig with the test container
 	emailConfig, err := config.NewEmailConfig()
 	require.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), emailConfig)
 
-	// Verify the emailConfig values
 	assert.Equal(suite.T(), os.Getenv("SMTP_HOST"), emailConfig.Host)
 	port, _ := strconv.Atoi(os.Getenv("SMTP_PORT"))
 	assert.Equal(suite.T(), port, emailConfig.Port)
@@ -91,6 +91,7 @@ func (suite *EmailConfigTestSuite) TestNewEmailConfig_Integration() {
 	assert.Equal(suite.T(), os.Getenv("SMTP_AUTH_PASSWORD"), emailConfig.AuthPassword)
 }
 
+// TestEmailConfigTestSuite executes the test suite for email configuration using the EmailConfigTestSuite.
 func TestEmailConfigTestSuite(t *testing.T) {
 	suite.Run(t, new(EmailConfigTestSuite))
 }

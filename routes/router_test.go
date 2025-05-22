@@ -9,61 +9,51 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockUserRouteRegistrar mocks the User route registration function
+// MockUserRouteRegistrar is a mock implementation of a user route registrar for testing route registration functionality.
 type MockUserRouteRegistrar struct {
 	mock.Mock
 }
 
+// User registers user-related routes to the provided Gin engine using the supplied dependency injector.
 func (m *MockUserRouteRegistrar) User(server *gin.Engine, injector *do.Injector) {
 	m.Called(server, injector)
 }
 
+// TestRegisterRoutes tests the RegisterRoutes function to ensure routing logic and dependency injection work as expected.
 func TestRegisterRoutes(t *testing.T) {
-	// Create mock server and injector
 	mockEngine := gin.Default()
 	mockInjector := do.New()
 
 	t.Run(
 		"Successfully registers routes", func(t *testing.T) {
-			// Create mock for User function
 			mockUserRegistrar := new(MockUserRouteRegistrar)
 
-			// Set expectations
 			mockUserRegistrar.On("User", mockEngine, mockInjector).Once()
 
-			// Replace actual User function with mock
 			originalUser := User
 			User = mockUserRegistrar.User
-			defer func() { User = originalUser }() // Restore original function
+			defer func() { User = originalUser }()
 
-			// Call the function
 			RegisterRoutes(mockEngine, mockInjector)
 
-			// Verify
 			mockUserRegistrar.AssertExpectations(t)
 		},
 	)
 
 	t.Run(
 		"Passes correct parameters", func(t *testing.T) {
-			// Create mock for User function
 			mockUserRegistrar := new(MockUserRouteRegistrar)
 
-			// Set expectations with argument matchers
 			mockUserRegistrar.On("User", mock.AnythingOfType("*gin.Engine"), mock.AnythingOfType("*do.Injector")).Once()
 
-			// Replace actual User function with mock
 			originalUser := User
 			User = mockUserRegistrar.User
 			defer func() { User = originalUser }()
 
-			// Call the function
 			RegisterRoutes(mockEngine, mockInjector)
 
-			// Verify
 			mockUserRegistrar.AssertExpectations(t)
 
-			// Get the actual arguments passed
 			args := mockUserRegistrar.Calls[0].Arguments
 			serverArg := args.Get(0).(*gin.Engine)
 			injectorArg := args.Get(1).(*do.Injector)
