@@ -31,12 +31,12 @@ type SeedsTestSuite struct {
 
 // SeedUserRequest represents the structure for seeding a user in the database, containing user details and verification status.
 type SeedUserRequest struct {
-	Name       string `json:"name"`
-	TelpNumber string `json:"telp_number"`
-	Email      string `json:"email"`
-	Password   string `json:"password"`
-	Role       string `json:"role"`
-	IsVerified bool   `json:"is_verified"`
+	Name        string `json:"name"`
+	PhoneNumber string `json:"phone_number"`
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	Role        string `json:"role"`
+	IsVerified  bool   `json:"is_verified"`
 }
 
 // SetupSuite initializes the test suite, setting up the database container, environment variables, and test data.
@@ -71,20 +71,20 @@ func (suite *SeedsTestSuite) SetupSuite() {
 	suite.tempJSONPath = filepath.Join(os.TempDir(), "test_users.json")
 	suite.testData = []SeedUserRequest{
 		{
-			Name:       "Test User 1",
-			TelpNumber: "08123456789",
-			Email:      "test1@example.com",
-			Password:   "password123",
-			Role:       "user",
-			IsVerified: true,
+			Name:        "Test User 1",
+			PhoneNumber: "08123456789",
+			Email:       "test1@example.com",
+			Password:    "password123",
+			Role:        "user",
+			IsVerified:  true,
 		},
 		{
-			Name:       "Test Admin",
-			TelpNumber: "08123456788",
-			Email:      "admin@example.com",
-			Password:   "admin123",
-			Role:       "admin",
-			IsVerified: true,
+			Name:        "Test Admin",
+			PhoneNumber: "08123456788",
+			Email:       "admin@example.com",
+			Password:    "admin123",
+			Role:        "admin",
+			IsVerified:  true,
 		},
 	}
 

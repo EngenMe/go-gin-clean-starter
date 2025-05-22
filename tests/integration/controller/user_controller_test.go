@@ -140,8 +140,8 @@ func TestRegister(t *testing.T) {
 				require.NoError(t, err)
 				err = writer.WriteField("password", tt.payload.Password)
 				require.NoError(t, err)
-				if tt.payload.TelpNumber != "" {
-					err := writer.WriteField("telp_number", tt.payload.TelpNumber)
+				if tt.payload.PhoneNumber != "" {
+					err := writer.WriteField("phone_number", tt.payload.PhoneNumber)
 					require.NoError(t, err)
 				}
 
@@ -885,9 +885,9 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Success update user",
 			payload: dto.UserUpdateRequest{
-				Name:       "Updated User",
-				TelpNumber: "1234567890",
-				Email:      "updated@example.com",
+				Name:        "Updated User",
+				PhoneNumber: "1234567890",
+				Email:       "updated@example.com",
 			},
 			userID:       registeredUser.ID,
 			token:        token,
@@ -897,9 +897,9 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Invalid email format",
 			payload: dto.UserUpdateRequest{
-				Name:       "Updated User",
-				TelpNumber: "1234567890",
-				Email:      "invalid-email",
+				Name:        "Updated User",
+				PhoneNumber: "1234567890",
+				Email:       "invalid-email",
 			},
 			userID:       registeredUser.ID,
 			token:        token,
@@ -909,9 +909,9 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Unauthorized - missing token",
 			payload: dto.UserUpdateRequest{
-				Name:       "Updated User",
-				TelpNumber: "1234567890",
-				Email:      "updated@example.com",
+				Name:        "Updated User",
+				PhoneNumber: "1234567890",
+				Email:       "updated@example.com",
 			},
 			userID:       registeredUser.ID,
 			token:        "",
@@ -974,9 +974,9 @@ func TestUpdate(t *testing.T) {
 					)
 					assert.Equal(
 						t,
-						tt.payload.TelpNumber,
-						response.Data.TelpNumber,
-						"TelpNumber mismatch in response for test: %s",
+						tt.payload.PhoneNumber,
+						response.Data.PhoneNumber,
+						"PhoneNumber mismatch in response for test: %s",
 						tt.name,
 					)
 					assert.Equal(
@@ -992,9 +992,9 @@ func TestUpdate(t *testing.T) {
 					assert.Equal(t, tt.payload.Name, user.Name, "Name mismatch in database for test: %s", tt.name)
 					assert.Equal(
 						t,
-						tt.payload.TelpNumber,
-						user.TelpNumber,
-						"TelpNumber mismatch in database for test: %s",
+						tt.payload.PhoneNumber,
+						user.PhoneNumber,
+						"PhoneNumber mismatch in database for test: %s",
 						tt.name,
 					)
 					assert.Equal(t, tt.payload.Email, user.Email, "Email mismatch in database for test: %s", tt.name)

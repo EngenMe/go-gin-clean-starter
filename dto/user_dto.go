@@ -107,22 +107,22 @@ var (
 type (
 	// UserCreateRequest is used to encapsulate data for creating a new user with optional image upload.
 	UserCreateRequest struct {
-		Name       string                `json:"name" form:"name" binding:"required,min=2,max=100"`
-		TelpNumber string                `json:"telp_number" form:"telp_number" binding:"omitempty,min=8,max=20"`
-		Email      string                `json:"email" form:"email" binding:"required,email"`
-		Password   string                `json:"password" form:"password" binding:"required,min=8"`
-		Image      *multipart.FileHeader `json:"image" form:"image"`
+		Name        string                `json:"name" form:"name" binding:"required,min=2,max=100"`
+		PhoneNumber string                `json:"phone_number" form:"phone_number" binding:"omitempty,min=8,max=20"`
+		Email       string                `json:"email" form:"email" binding:"required,email"`
+		Password    string                `json:"password" form:"password" binding:"required,min=8"`
+		Image       *multipart.FileHeader `json:"image" form:"image"`
 	}
 
 	// UserResponse represents the structure for user data returned in API responses.
 	UserResponse struct {
-		ID         string `json:"id"`
-		Name       string `json:"name"`
-		Email      string `json:"email"`
-		TelpNumber string `json:"telp_number"`
-		Role       string `json:"role"`
-		ImageUrl   string `json:"image_url"`
-		IsVerified bool   `json:"is_verified"`
+		ID          string `json:"id"`
+		Name        string `json:"name"`
+		Email       string `json:"email"`
+		PhoneNumber string `json:"phone_number"`
+		Role        string `json:"role"`
+		ImageUrl    string `json:"image_url"`
+		IsVerified  bool   `json:"is_verified"`
 	}
 
 	// UserPaginationResponse represents paginated response data for a list of users including metadata and user details.
@@ -139,19 +139,19 @@ type (
 
 	// UserUpdateRequest represents a request to update user details such as name, telephone number, and email.
 	UserUpdateRequest struct {
-		Name       string `json:"name" form:"name" binding:"omitempty,min=2,max=100"`
-		TelpNumber string `json:"telp_number" form:"telp_number" binding:"omitempty,min=8,max=20"`
-		Email      string `json:"email" form:"email" binding:"omitempty,email"`
+		Name        string `json:"name" form:"name" binding:"omitempty,min=2,max=100"`
+		PhoneNumber string `json:"phone_number" form:"phone_number" binding:"omitempty,min=8,max=20"`
+		Email       string `json:"email" form:"email" binding:"omitempty,email"`
 	}
 
 	// UserUpdateResponse represents the response type returned after updating user details in the system.
 	UserUpdateResponse struct {
-		ID         string `json:"id"`
-		Name       string `json:"name"`
-		TelpNumber string `json:"telp_number"`
-		Role       string `json:"role"`
-		Email      string `json:"email"`
-		IsVerified bool   `json:"is_verified"`
+		ID          string `json:"id"`
+		Name        string `json:"name"`
+		PhoneNumber string `json:"phone_number"`
+		Role        string `json:"role"`
+		Email       string `json:"email"`
+		IsVerified  bool   `json:"is_verified"`
 	}
 
 	// SendVerificationEmailRequest represents a request to send a verification email to the user.

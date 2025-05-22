@@ -57,12 +57,12 @@ var ListUserSeeder = func(db *gorm.DB) error {
 
 	for _, seedUser := range seedUsers {
 		user := entity.User{
-			Name:       seedUser.Name,
-			TelpNumber: seedUser.TelpNumber,
-			Email:      seedUser.Email,
-			Password:   seedUser.Password,
-			Role:       seedUser.Role,
-			IsVerified: seedUser.IsVerified,
+			Name:        seedUser.Name,
+			PhoneNumber: seedUser.PhoneNumber,
+			Email:       seedUser.Email,
+			Password:    seedUser.Password,
+			Role:        seedUser.Role,
+			IsVerified:  seedUser.IsVerified,
 		}
 
 		var existingUser entity.User

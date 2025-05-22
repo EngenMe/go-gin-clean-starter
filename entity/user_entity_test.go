@@ -21,11 +21,11 @@ func TestUser_BeforeCreate(t *testing.T) {
 		{
 			name: "Valid user with password",
 			user: &User{
-				Name:       "John Doe",
-				Email:      "john@example.com",
-				TelpNumber: "1234567890",
-				Password:   "password123",
-				Role:       "user",
+				Name:        "John Doe",
+				Email:       "john@example.com",
+				PhoneNumber: "1234567890",
+				Password:    "password123",
+				Role:        "user",
 			},
 			expectError: false,
 			validate: func(t *testing.T, user *User) {
@@ -38,10 +38,10 @@ func TestUser_BeforeCreate(t *testing.T) {
 		{
 			name: "User with empty role",
 			user: &User{
-				Name:       "Jane Doe",
-				Email:      "jane@example.com",
-				TelpNumber: "0987654321",
-				Password:   "password123",
+				Name:        "Jane Doe",
+				Email:       "jane@example.com",
+				PhoneNumber: "0987654321",
+				Password:    "password123",
 			},
 			expectError: false,
 			validate: func(t *testing.T, user *User) {
@@ -131,12 +131,12 @@ func TestUser_Validation(t *testing.T) {
 		{
 			name: "Valid user",
 			user: &User{
-				Name:       "John Doe",
-				Email:      "john@example.com",
-				TelpNumber: "1234567890",
-				Password:   "password123",
-				Role:       "user",
-				ImageUrl:   "https://example.com/image.jpg",
+				Name:        "John Doe",
+				Email:       "john@example.com",
+				PhoneNumber: "1234567890",
+				Password:    "password123",
+				Role:        "user",
+				ImageUrl:    "https://example.com/image.jpg",
 			},
 			expectError: false,
 		},
@@ -205,7 +205,7 @@ func validateUser(user *User) error {
 	if user.Email == "" || !isValidEmail(user.Email) {
 		return assert.AnError
 	}
-	if user.TelpNumber != "" && (len(user.TelpNumber) < 8 || len(user.TelpNumber) > 20) {
+	if user.PhoneNumber != "" && (len(user.PhoneNumber) < 8 || len(user.PhoneNumber) > 20) {
 		return assert.AnError
 	}
 	if user.Password == "" || len(user.Password) < 8 {

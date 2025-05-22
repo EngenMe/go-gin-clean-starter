@@ -57,12 +57,12 @@ func TestRefreshTokenRepository(t *testing.T) {
 	repo := repository.NewRefreshTokenRepository(db)
 
 	user := entity.User{
-		ID:         uuid.New(),
-		Name:       "Test User",
-		Email:      "test@example.com",
-		TelpNumber: "1234567890",
-		Password:   "password123",
-		Role:       "user",
+		ID:          uuid.New(),
+		Name:        "Test User",
+		Email:       "test@example.com",
+		PhoneNumber: "1234567890",
+		Password:    "password123",
+		Role:        "user",
 		Timestamp: entity.Timestamp{
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),

@@ -101,10 +101,10 @@ func TestUserRoutes(t *testing.T) {
 
 	createTestUserAndGetToken := func(t *testing.T) (string, string) {
 		registerReq := dto.UserCreateRequest{
-			Name:       fmt.Sprintf("Test User %d", time.Now().UnixNano()),
-			TelpNumber: "08123456789",
-			Email:      fmt.Sprintf("test_%d@example.com", time.Now().UnixNano()),
-			Password:   "password123",
+			Name:        fmt.Sprintf("Test User %d", time.Now().UnixNano()),
+			PhoneNumber: "08123456789",
+			Email:       fmt.Sprintf("test_%d@example.com", time.Now().UnixNano()),
+			Password:    "password123",
 		}
 
 		body := new(bytes.Buffer)
@@ -185,10 +185,10 @@ func TestUserRoutes(t *testing.T) {
 			method: "POST",
 			path:   "/api/user",
 			body: dto.UserCreateRequest{
-				Name:       "",
-				Email:      "invalid",
-				Password:   "short",
-				TelpNumber: "",
+				Name:        "",
+				Email:       "invalid",
+				Password:    "short",
+				PhoneNumber: "",
 			},
 			contentType:  "multipart/form-data",
 			expectedCode: http.StatusBadRequest,

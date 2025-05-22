@@ -113,13 +113,13 @@ func (s *userService) Register(ctx context.Context, req dto.UserCreateRequest) (
 	}
 
 	user := entity.User{
-		Name:       req.Name,
-		TelpNumber: req.TelpNumber,
-		ImageUrl:   filename,
-		Role:       constants.ENUM_ROLE_USER,
-		Email:      req.Email,
-		Password:   req.Password,
-		IsVerified: false,
+		Name:        req.Name,
+		PhoneNumber: req.PhoneNumber,
+		ImageUrl:    filename,
+		Role:        constants.ENUM_ROLE_USER,
+		Email:       req.Email,
+		Password:    req.Password,
+		IsVerified:  false,
 	}
 
 	userReg, err := s.userRepo.Register(ctx, nil, user)
@@ -138,13 +138,13 @@ func (s *userService) Register(ctx context.Context, req dto.UserCreateRequest) (
 	}
 
 	return dto.UserResponse{
-		ID:         userReg.ID.String(),
-		Name:       userReg.Name,
-		TelpNumber: userReg.TelpNumber,
-		ImageUrl:   userReg.ImageUrl,
-		Role:       userReg.Role,
-		Email:      userReg.Email,
-		IsVerified: userReg.IsVerified,
+		ID:          userReg.ID.String(),
+		Name:        userReg.Name,
+		PhoneNumber: userReg.PhoneNumber,
+		ImageUrl:    userReg.ImageUrl,
+		Role:        userReg.Role,
+		Email:       userReg.Email,
+		IsVerified:  userReg.IsVerified,
 	}, nil
 }
 
@@ -160,7 +160,6 @@ func makeVerificationEmail(receiverEmail string) (map[string]string, error) {
 
 	verifyLink := LOCAL_URL + "/" + VERIFY_EMAIL_ROUTE + "?token=" + token
 
-	// TODO
 	templatePath := "utils/email-template/base_mail.html"
 	projectPath, err := helpers.GetProjectRoot()
 	if err != nil {
@@ -285,13 +284,13 @@ func (s *userService) GetAllUserWithPagination(
 	var users []dto.UserResponse
 	for _, user := range dataWithPaginate.Users {
 		data := dto.UserResponse{
-			ID:         user.ID.String(),
-			Name:       user.Name,
-			Email:      user.Email,
-			Role:       user.Role,
-			TelpNumber: user.TelpNumber,
-			ImageUrl:   user.ImageUrl,
-			IsVerified: user.IsVerified,
+			ID:          user.ID.String(),
+			Name:        user.Name,
+			Email:       user.Email,
+			Role:        user.Role,
+			PhoneNumber: user.PhoneNumber,
+			ImageUrl:    user.ImageUrl,
+			IsVerified:  user.IsVerified,
 		}
 
 		users = append(users, data)
@@ -316,13 +315,13 @@ func (s *userService) GetUserById(ctx context.Context, userId string) (dto.UserR
 	}
 
 	return dto.UserResponse{
-		ID:         user.ID.String(),
-		Name:       user.Name,
-		TelpNumber: user.TelpNumber,
-		Role:       user.Role,
-		Email:      user.Email,
-		ImageUrl:   user.ImageUrl,
-		IsVerified: user.IsVerified,
+		ID:          user.ID.String(),
+		Name:        user.Name,
+		PhoneNumber: user.PhoneNumber,
+		Role:        user.Role,
+		Email:       user.Email,
+		ImageUrl:    user.ImageUrl,
+		IsVerified:  user.IsVerified,
 	}, nil
 }
 
@@ -334,13 +333,13 @@ func (s *userService) GetUserByEmail(ctx context.Context, email string) (dto.Use
 	}
 
 	return dto.UserResponse{
-		ID:         emails.ID.String(),
-		Name:       emails.Name,
-		TelpNumber: emails.TelpNumber,
-		Role:       emails.Role,
-		Email:      emails.Email,
-		ImageUrl:   emails.ImageUrl,
-		IsVerified: emails.IsVerified,
+		ID:          emails.ID.String(),
+		Name:        emails.Name,
+		PhoneNumber: emails.PhoneNumber,
+		Role:        emails.Role,
+		Email:       emails.Email,
+		ImageUrl:    emails.ImageUrl,
+		IsVerified:  emails.IsVerified,
 	}, nil
 }
 
@@ -355,11 +354,11 @@ func (s *userService) Update(ctx context.Context, req dto.UserUpdateRequest, use
 	}
 
 	data := entity.User{
-		ID:         user.ID,
-		Name:       req.Name,
-		TelpNumber: req.TelpNumber,
-		Role:       user.Role,
-		Email:      req.Email,
+		ID:          user.ID,
+		Name:        req.Name,
+		PhoneNumber: req.PhoneNumber,
+		Role:        user.Role,
+		Email:       req.Email,
 	}
 
 	userUpdate, err := s.userRepo.Update(ctx, nil, data)
@@ -368,12 +367,12 @@ func (s *userService) Update(ctx context.Context, req dto.UserUpdateRequest, use
 	}
 
 	return dto.UserUpdateResponse{
-		ID:         userUpdate.ID.String(),
-		Name:       userUpdate.Name,
-		TelpNumber: userUpdate.TelpNumber,
-		Role:       userUpdate.Role,
-		Email:      userUpdate.Email,
-		IsVerified: user.IsVerified,
+		ID:          userUpdate.ID.String(),
+		Name:        userUpdate.Name,
+		PhoneNumber: userUpdate.PhoneNumber,
+		Role:        userUpdate.Role,
+		Email:       userUpdate.Email,
+		IsVerified:  user.IsVerified,
 	}, nil
 }
 

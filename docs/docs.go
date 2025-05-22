@@ -595,7 +595,7 @@ const docTemplate = `{
                 "role": {
                     "type": "string"
                 },
-                "telp_number": {
+                "phone_number": {
                     "type": "string"
                 }
             }
@@ -612,7 +612,7 @@ const docTemplate = `{
                     "maxLength": 100,
                     "minLength": 2
                 },
-                "telp_number": {
+                "phone_number": {
                     "type": "string",
                     "maxLength": 20,
                     "minLength": 8
@@ -638,7 +638,7 @@ const docTemplate = `{
                 "role": {
                     "type": "string"
                 },
-                "telp_number": {
+                "phone_number": {
                     "type": "string"
                 }
             }

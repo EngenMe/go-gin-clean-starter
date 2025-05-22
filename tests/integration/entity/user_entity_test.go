@@ -82,12 +82,12 @@ func TestUser_Integration_Create(t *testing.T) {
 		{
 			name: "Valid user creation",
 			user: &entity.User{
-				Name:       "John Doe",
-				Email:      "john-doe@example.com",
-				TelpNumber: "1234567890",
-				Password:   "password123",
-				Role:       "user",
-				ImageUrl:   "https://example.com/image.jpg",
+				Name:        "John Doe",
+				Email:       "john-doe@example.com",
+				PhoneNumber: "1234567890",
+				Password:    "password123",
+				Role:        "user",
+				ImageUrl:    "https://example.com/image.jpg",
 			},
 			expectError: false,
 			validate: func(t *testing.T, user *entity.User, db *gorm.DB) {
@@ -97,7 +97,7 @@ func TestUser_Integration_Create(t *testing.T) {
 				assert.NotEqual(t, uuid.Nil, savedUser.ID, "ID should be generated")
 				assert.Equal(t, user.Name, savedUser.Name, "Name should match")
 				assert.Equal(t, user.Email, savedUser.Email, "Email should match")
-				assert.Equal(t, user.TelpNumber, savedUser.TelpNumber, "TelpNumber should match")
+				assert.Equal(t, user.PhoneNumber, savedUser.PhoneNumber, "PhoneNumber should match")
 				assert.NotEqual(t, "password123", savedUser.Password, "Password should be hashed")
 				assert.Equal(t, "user", savedUser.Role, "Role should be user")
 				assert.False(t, savedUser.IsVerified, "IsVerified should be false")
@@ -106,11 +106,11 @@ func TestUser_Integration_Create(t *testing.T) {
 		{
 			name: "Duplicate email",
 			user: &entity.User{
-				Name:       "Jane Doe",
-				Email:      "john@example.com",
-				TelpNumber: "0987654321",
-				Password:   "password123",
-				Role:       "user",
+				Name:        "Jane Doe",
+				Email:       "john@example.com",
+				PhoneNumber: "0987654321",
+				Password:    "password123",
+				Role:        "user",
 			},
 			expectError: true,
 			validate: func(t *testing.T, user *entity.User, db *gorm.DB) {
@@ -133,11 +133,11 @@ func TestUser_Integration_Create(t *testing.T) {
 
 	db.Create(
 		&entity.User{
-			Name:       "Existing User",
-			Email:      "john@example.com",
-			TelpNumber: "1234567890",
-			Password:   "password123",
-			Role:       "user",
+			Name:        "Existing User",
+			Email:       "john@example.com",
+			PhoneNumber: "1234567890",
+			Password:    "password123",
+			Role:        "user",
 		},
 	)
 
@@ -162,11 +162,11 @@ func TestUser_Integration_Update(t *testing.T) {
 	defer cleanupTestDB(t, db)
 
 	user := &entity.User{
-		Name:       "John Doe",
-		Email:      "john@example.com",
-		TelpNumber: "1234567890",
-		Password:   "password123",
-		Role:       "user",
+		Name:        "John Doe",
+		Email:       "john@example.com",
+		PhoneNumber: "1234567890",
+		Password:    "password123",
+		Role:        "user",
 	}
 	err := db.Create(user).Error
 	assert.NoError(t, err, "Failed to create test user")
@@ -195,7 +195,7 @@ func TestUser_Integration_Update(t *testing.T) {
 		{
 			name: "Update without password change",
 			update: func(user *entity.User) {
-				user.TelpNumber = "0987654321"
+				user.PhoneNumber = "0987654321"
 				user.Role = "admin"
 			},
 			expectError: false,
@@ -203,7 +203,7 @@ func TestUser_Integration_Update(t *testing.T) {
 				var updatedUser entity.User
 				err := db.Where("email = ?", user.Email).First(&updatedUser).Error
 				assert.NoError(t, err, "User should exist in the database")
-				assert.Equal(t, "0987654321", updatedUser.TelpNumber, "TelpNumber should be updated")
+				assert.Equal(t, "0987654321", updatedUser.PhoneNumber, "PhoneNumber should be updated")
 				assert.Equal(t, "admin", updatedUser.Role, "Role should be updated")
 			},
 		},

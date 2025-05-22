@@ -120,12 +120,12 @@ func TestUserRepository(t *testing.T) {
 		"Register", func(t *testing.T) {
 			t.Cleanup(cleanDB)
 			user := entity.User{
-				ID:         uuid.New(),
-				Name:       "Test User",
-				Email:      "test@example.com",
-				TelpNumber: "1234567890",
-				Password:   "password123",
-				Role:       "user",
+				ID:          uuid.New(),
+				Name:        "Test User",
+				Email:       "test@example.com",
+				PhoneNumber: "1234567890",
+				Password:    "password123",
+				Role:        "user",
 				Timestamp: entity.Timestamp{
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
@@ -145,24 +145,24 @@ func TestUserRepository(t *testing.T) {
 			t.Cleanup(cleanDB)
 			users := []entity.User{
 				{
-					ID:         uuid.New(),
-					Name:       "User One",
-					Email:      "user1@example.com",
-					TelpNumber: "1111111111",
-					Password:   "password123",
-					Role:       "user",
+					ID:          uuid.New(),
+					Name:        "User One",
+					Email:       "user1@example.com",
+					PhoneNumber: "1111111111",
+					Password:    "password123",
+					Role:        "user",
 					Timestamp: entity.Timestamp{
 						CreatedAt: time.Now(),
 						UpdatedAt: time.Now(),
 					},
 				},
 				{
-					ID:         uuid.New(),
-					Name:       "User Two",
-					Email:      "user2@example.com",
-					TelpNumber: "2222222222",
-					Password:   "password123",
-					Role:       "user",
+					ID:          uuid.New(),
+					Name:        "User Two",
+					Email:       "user2@example.com",
+					PhoneNumber: "2222222222",
+					Password:    "password123",
+					Role:        "user",
 					Timestamp: entity.Timestamp{
 						CreatedAt: time.Now(),
 						UpdatedAt: time.Now(),
@@ -195,12 +195,12 @@ func TestUserRepository(t *testing.T) {
 		"GetUserById", func(t *testing.T) {
 			t.Cleanup(cleanDB)
 			user := entity.User{
-				ID:         uuid.New(),
-				Name:       "ID Test User",
-				Email:      "idtest@example.com",
-				TelpNumber: "3333333333",
-				Password:   "password123",
-				Role:       "user",
+				ID:          uuid.New(),
+				Name:        "ID Test User",
+				Email:       "idtest@example.com",
+				PhoneNumber: "3333333333",
+				Password:    "password123",
+				Role:        "user",
 				Timestamp: entity.Timestamp{
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
@@ -221,12 +221,12 @@ func TestUserRepository(t *testing.T) {
 		"GetUserByEmail", func(t *testing.T) {
 			t.Cleanup(cleanDB)
 			user := entity.User{
-				ID:         uuid.New(),
-				Name:       "Email Test User",
-				Email:      "emailtest@example.com",
-				TelpNumber: "4444444444",
-				Password:   "password123",
-				Role:       "user",
+				ID:          uuid.New(),
+				Name:        "Email Test User",
+				Email:       "emailtest@example.com",
+				PhoneNumber: "4444444444",
+				Password:    "password123",
+				Role:        "user",
 				Timestamp: entity.Timestamp{
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
@@ -247,12 +247,12 @@ func TestUserRepository(t *testing.T) {
 		"CheckEmail", func(t *testing.T) {
 			t.Cleanup(cleanDB)
 			user := entity.User{
-				ID:         uuid.New(),
-				Name:       "Check Email User",
-				Email:      "checkemail@example.com",
-				TelpNumber: "5555555555",
-				Password:   "password123",
-				Role:       "user",
+				ID:          uuid.New(),
+				Name:        "Check Email User",
+				Email:       "checkemail@example.com",
+				PhoneNumber: "5555555555",
+				Password:    "password123",
+				Role:        "user",
 				Timestamp: entity.Timestamp{
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
@@ -277,12 +277,12 @@ func TestUserRepository(t *testing.T) {
 		"Update", func(t *testing.T) {
 			t.Cleanup(cleanDB)
 			user := entity.User{
-				ID:         uuid.New(),
-				Name:       "Update Test User",
-				Email:      "updatetest@example.com",
-				TelpNumber: "6666666666",
-				Password:   "password123",
-				Role:       "user",
+				ID:          uuid.New(),
+				Name:        "Update Test User",
+				Email:       "updatetest@example.com",
+				PhoneNumber: "6666666666",
+				Password:    "password123",
+				Role:        "user",
 				Timestamp: entity.Timestamp{
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
@@ -292,11 +292,11 @@ func TestUserRepository(t *testing.T) {
 			assert.NoError(t, err)
 
 			updatedUser := entity.User{
-				ID:         user.ID,
-				Name:       "Updated User",
-				Email:      "updated@example.com",
-				TelpNumber: "7777777777",
-				Role:       "admin",
+				ID:          user.ID,
+				Name:        "Updated User",
+				Email:       "updated@example.com",
+				PhoneNumber: "7777777777",
+				Role:        "admin",
 				Timestamp: entity.Timestamp{
 					UpdatedAt: time.Now(),
 				},
@@ -306,7 +306,7 @@ func TestUserRepository(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, updatedUser.Name, result.Name)
 			assert.Equal(t, updatedUser.Email, result.Email)
-			assert.Equal(t, updatedUser.TelpNumber, result.TelpNumber)
+			assert.Equal(t, updatedUser.PhoneNumber, result.PhoneNumber)
 			assert.Equal(t, updatedUser.Role, result.Role)
 		},
 	)
@@ -315,12 +315,12 @@ func TestUserRepository(t *testing.T) {
 		"Delete", func(t *testing.T) {
 			t.Cleanup(cleanDB)
 			user := entity.User{
-				ID:         uuid.New(),
-				Name:       "Delete Test User",
-				Email:      "deletetest@example.com",
-				TelpNumber: "8888888888",
-				Password:   "password123",
-				Role:       "user",
+				ID:          uuid.New(),
+				Name:        "Delete Test User",
+				Email:       "deletetest@example.com",
+				PhoneNumber: "8888888888",
+				Password:    "password123",
+				Role:        "user",
 				Timestamp: entity.Timestamp{
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),

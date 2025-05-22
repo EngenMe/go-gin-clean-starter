@@ -1,7 +1,7 @@
 [
   {
     "name": "admin",
-    "telp_number": "08123456789",
+    "phone_number": "08123456789",
     "email": "admin1234@gmail.com",
     "password": "admin1234",
     "role": "admin",
@@ -9,7 +9,7 @@
   },
   {
     "name": "user",
-    "telp_number": "08123456789",
+    "phone_number": "08123456789",
     "email": "user1234@gmail.com",
     "password": "user1234",
     "role": "user",
