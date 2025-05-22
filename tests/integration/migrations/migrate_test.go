@@ -1,7 +1,7 @@
 package migrations
 
 import (
-	"os"
+	"fmt"
 	"testing"
 
 	"github.com/Caknoooo/go-gin-clean-starter/entity"
@@ -11,28 +11,28 @@ import (
 
 // TestMigrate_Integration is an integration test that verifies the migration process for database schema and initial setup.
 func TestMigrate_Integration(t *testing.T) {
-	testContainer, err := container.StartTestContainer()
+	container.LoadTestEnv()
+
+	dbContainer, err := container.StartTestContainer()
 	if err != nil {
 		t.Fatalf("Failed to start test container: %v", err)
 	}
 	defer func() {
-		if err := testContainer.Stop(); err != nil {
+		if err := dbContainer.Stop(); err != nil {
 			t.Errorf("Failed to stop test container: %v", err)
 		}
 	}()
 
-	os.Setenv("DB_HOST", testContainer.Host)
-	os.Setenv("DB_USER", "testuser")
-	os.Setenv("DB_PASS", "testpassword")
-	os.Setenv("DB_NAME", "testdb")
-	os.Setenv("DB_PORT", testContainer.Port)
-	defer func() {
-		os.Unsetenv("DB_HOST")
-		os.Unsetenv("DB_USER")
-		os.Unsetenv("DB_PASS")
-		os.Unsetenv("DB_NAME")
-		os.Unsetenv("DB_PORT")
-	}()
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
+	}
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
+	}
 
 	db := container.SetUpDatabaseConnection()
 	defer func() {

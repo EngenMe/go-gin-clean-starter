@@ -39,16 +39,23 @@ var (
 // TestMain sets up the test environment, including a test container, database connection, and dependency injection.
 // It runs tests and performs cleanup after execution.
 func TestMain(m *testing.M) {
-	testContainer, err := container.StartTestContainer()
+	container.LoadTestEnv()
+
+	dbContainer, err := container.StartTestContainer()
 	if err != nil {
 		panic(fmt.Sprintf("Failed to start test container: %v", err))
 	}
 
-	os.Setenv("DB_HOST", testContainer.Host)
-	os.Setenv("DB_PORT", testContainer.Port)
-	os.Setenv("DB_USER", "testuser")
-	os.Setenv("DB_PASS", "testpassword")
-	os.Setenv("DB_NAME", "testdb")
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
+	}
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
+	}
 
 	db = container.SetUpDatabaseConnection()
 
@@ -70,7 +77,7 @@ func TestMain(m *testing.M) {
 	if err := container.CloseDatabaseConnection(db); err != nil {
 		fmt.Printf("Failed to close database connection: %v\n", err)
 	}
-	if err := testContainer.Stop(); err != nil {
+	if err := dbContainer.Stop(); err != nil {
 		fmt.Printf("Failed to stop test container: %v\n", err)
 	}
 
@@ -644,21 +651,21 @@ func TestSendVerificationEmail(t *testing.T) {
 
 // TestVerifyEmail tests the email verification functionality with various scenarios and validates expected responses and outcomes.
 func TestVerifyEmail(t *testing.T) {
-	testContainer, err := container.StartTestContainer()
+	dbContainer, err := container.StartTestContainer()
 	if err != nil {
 		t.Fatalf("Failed to start test container: %v", err)
 	}
 	defer func() {
-		if err := testContainer.Stop(); err != nil {
+		if err := dbContainer.Stop(); err != nil {
 			t.Fatalf("Failed to stop test container: %v", err)
 		}
 	}()
 
-	os.Setenv("DB_HOST", testContainer.Host)
+	os.Setenv("DB_HOST", dbContainer.Host)
 	os.Setenv("DB_USER", "testuser")
 	os.Setenv("DB_PASS", "testpassword")
 	os.Setenv("DB_NAME", "testdb")
-	os.Setenv("DB_PORT", testContainer.Port)
+	os.Setenv("DB_PORT", dbContainer.Port)
 
 	db := container.SetUpDatabaseConnection()
 	defer func() {
@@ -794,21 +801,21 @@ func TestVerifyEmail(t *testing.T) {
 // TestUpdate is a unit test function for testing the Update endpoint of the UserController.
 // It validates cases such as successful updates, invalid input formats, and unauthorized access scenarios.
 func TestUpdate(t *testing.T) {
-	testContainer, err := container.StartTestContainer()
+	dbContainer, err := container.StartTestContainer()
 	if err != nil {
 		t.Fatalf("Failed to start test container: %v", err)
 	}
 	defer func() {
-		if err := testContainer.Stop(); err != nil {
+		if err := dbContainer.Stop(); err != nil {
 			t.Fatalf("Failed to stop test container: %v", err)
 		}
 	}()
 
-	os.Setenv("DB_HOST", testContainer.Host)
+	os.Setenv("DB_HOST", dbContainer.Host)
 	os.Setenv("DB_USER", "testuser")
 	os.Setenv("DB_PASS", "testpassword")
 	os.Setenv("DB_NAME", "testdb")
-	os.Setenv("DB_PORT", testContainer.Port)
+	os.Setenv("DB_PORT", dbContainer.Port)
 
 	db := container.SetUpDatabaseConnection()
 	defer func() {

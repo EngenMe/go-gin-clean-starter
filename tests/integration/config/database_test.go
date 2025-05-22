@@ -1,7 +1,6 @@
 package config_test
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,107 +16,76 @@ import (
 // It includes utility functions for setup, teardown, and validation of database connections in a controlled environment.
 // This suite uses a test container to mock the database and manage its lifecycle during testing sessions.
 type DatabaseConfigTestSuite struct {
-	suite.Suite
+	container.BaseSuite
 	dbContainer *container.TestDatabaseContainer
 	db          *gorm.DB
 }
 
-// SetupSuite initializes the test suite by starting a database container and setting required environment variables.
-func (suite *DatabaseConfigTestSuite) SetupSuite() {
-	container, err := container.StartTestContainer()
-	require.NoError(suite.T(), err)
-	suite.dbContainer = container
+// SetupSuite initializes the test suite by starting a database container and configuring required environment variables.
+func (s *DatabaseConfigTestSuite) SetupSuite() {
+	s.BaseSuite.SetupSuite()
 
-	err = os.Setenv("APP_ENV", constants.ENUM_RUN_TESTING)
-	if err != nil {
-		panic(err)
+	dbContainer, err := container.StartTestContainer()
+	require.NoError(s.T(), err)
+	s.dbContainer = dbContainer
+
+	envVars := map[string]string{
+		"APP_ENV": constants.ENUM_RUN_TESTING,
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
 	}
-	err = os.Setenv("DB_USER", "testuser")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PASS", "testpassword")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_NAME", "testdb")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_HOST", container.Host)
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PORT", container.Port)
-	if err != nil {
-		panic(err)
-	}
+	s.SetupEnv(envVars)
 }
 
-// TearDownSuite cleans up the test suite by closing database connections, stopping containers, and unsetting environment variables.
-func (suite *DatabaseConfigTestSuite) TearDownSuite() {
-	if suite.db != nil {
-		err := container.CloseDatabaseConnection(suite.db)
-		if err != nil {
-			panic(err)
-		}
+// TearDownSuite cleans up resources after tests, including closing the database, stopping the container, and resetting environment variables.
+func (s *DatabaseConfigTestSuite) TearDownSuite() {
+	if s.db != nil {
+		require.NoError(s.T(), container.CloseDatabaseConnection(s.db))
 	}
 
-	if suite.dbContainer != nil {
-		err := suite.dbContainer.Stop()
-		require.NoError(suite.T(), err)
+	if s.dbContainer != nil {
+		require.NoError(s.T(), s.dbContainer.Stop())
 	}
 
-	err := os.Unsetenv("APP_ENV")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Unsetenv("DB_USER")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Unsetenv("DB_PASS")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Unsetenv("DB_NAME")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Unsetenv("DB_HOST")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Unsetenv("DB_PORT")
-	if err != nil {
-		panic(err)
-	}
+	s.CleanupEnv(
+		[]string{
+			"APP_ENV",
+			"DB_USER",
+			"DB_PASS",
+			"DB_NAME",
+			"DB_HOST",
+			"DB_PORT",
+		},
+	)
 }
 
 // TestSetUpDatabaseConnection tests the setup of a database connection and validates its functionality and extensions.
-func (suite *DatabaseConfigTestSuite) TestSetUpDatabaseConnection() {
+func (s *DatabaseConfigTestSuite) TestSetUpDatabaseConnection() {
 	db := container.SetUpDatabaseConnection()
-	suite.db = db
+	s.db = db
 
 	var result int
 	err := db.Raw("SELECT 1").Scan(&result).Error
-	require.NoError(suite.T(), err)
-	assert.Equal(suite.T(), 1, result)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), 1, result)
 
 	var extensions []string
 	err = db.Raw("SELECT extname FROM pg_extension WHERE extname = 'uuid-ossp'").Scan(&extensions).Error
-	require.NoError(suite.T(), err)
-	assert.NotEmpty(suite.T(), extensions)
+	require.NoError(s.T(), err)
+	assert.NotEmpty(s.T(), extensions)
 }
 
 // TestCloseDatabaseConnection verifies the database connection can be closed properly and the closure is successfully enforced.
-func (suite *DatabaseConfigTestSuite) TestCloseDatabaseConnection() {
+func (s *DatabaseConfigTestSuite) TestCloseDatabaseConnection() {
 	db := container.SetUpDatabaseConnection()
-	suite.db = db
+	s.db = db
 
 	var result int
 	err := db.Raw("SELECT 1").Scan(&result).Error
-	require.NoError(suite.T(), err)
+	require.NoError(s.T(), err)
 
 	err = container.CloseDatabaseConnection(db)
 	if err != nil {
@@ -125,9 +93,9 @@ func (suite *DatabaseConfigTestSuite) TestCloseDatabaseConnection() {
 	}
 
 	dbSQL, err := db.DB()
-	require.NoError(suite.T(), err)
+	require.NoError(s.T(), err)
 	err = dbSQL.Ping()
-	require.Error(suite.T(), err)
+	require.Error(s.T(), err)
 }
 
 // TestDatabaseConfigTestSuite runs the DatabaseConfigTestSuite to validate database configuration and lifecycle management.

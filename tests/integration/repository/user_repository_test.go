@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"os"
+	"fmt"
 	"testing"
 	"time"
 
@@ -68,36 +68,28 @@ func TotalPage(count, perPage int64) int64 {
 
 // TestUserRepository is a test function for the user repository, ensuring proper functionality of CRUD operations.
 func TestUserRepository(t *testing.T) {
-	testContainer, err := container.StartTestContainer()
+	container.LoadTestEnv()
+
+	dbContainer, err := container.StartTestContainer()
 	if err != nil {
 		t.Fatalf("failed to start test container: %v", err)
 	}
-	defer func(testContainer *container.TestDatabaseContainer) {
-		err := testContainer.Stop()
+	defer func(dbContainer *container.TestDatabaseContainer) {
+		err := dbContainer.Stop()
 		if err != nil {
 			panic(err)
 		}
-	}(testContainer)
+	}(dbContainer)
 
-	err = os.Setenv("DB_HOST", testContainer.Host)
-	if err != nil {
-		panic(err)
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
 	}
-	err = os.Setenv("DB_USER", "testuser")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PASS", "testpassword")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_NAME", "testdb")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PORT", testContainer.Port)
-	if err != nil {
-		return
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
 	}
 
 	db := container.SetUpDatabaseConnection()

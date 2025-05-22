@@ -2,6 +2,7 @@ package seeds
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -39,16 +40,23 @@ type SeedUserRequest struct {
 
 // SetupSuite initializes the test suite, setting up the database container, environment variables, and test data.
 func (suite *SeedsTestSuite) SetupSuite() {
-	testContainer, err := container.StartTestContainer()
+	container.LoadTestEnv()
+
+	dbContainer, err := container.StartTestContainer()
 	if err != nil {
 		suite.T().Fatalf("Failed to start test container: %v", err)
 	}
 
-	os.Setenv("DB_HOST", testContainer.Host)
-	os.Setenv("DB_PORT", testContainer.Port)
-	os.Setenv("DB_USER", "testuser")
-	os.Setenv("DB_PASS", "testpassword")
-	os.Setenv("DB_NAME", "testdb")
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
+	}
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
+	}
 
 	db := container.SetUpDatabaseConnection()
 	suite.db = db

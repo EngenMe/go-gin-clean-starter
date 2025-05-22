@@ -1,0 +1,50 @@
+
+2025/05/22 20:35:30 /home/engenme/projects/go-gin-clean-starter/config/database.go:75
+[error] failed to initialize database, got error failed to connect to `user=testuser database=testdb`:
+	hostname resolving error: lookup postgres on 127.0.0.53:53: server misbehaving
+	lookup postgres on 127.0.0.53:53: server misbehaving
+
+2025/05/22 20:35:30 /home/engenme/projects/go-gin-clean-starter/config/database.go:75
+[error] failed to initialize database, got error failed to connect to `user=testuser database=testdb`:
+	hostname resolving error: lookup postgres on 127.0.0.53:53: server misbehaving
+	lookup postgres on 127.0.0.53:53: server misbehaving
+
+2025/05/22 20:37:16 /home/engenme/projects/go-gin-clean-starter/config/database.go:75
+[error] failed to initialize database, got error failed to connect to `user=testuser database=testdb`:
+	hostname resolving error: lookup postgres on 127.0.0.53:53: server misbehaving
+	lookup postgres on 127.0.0.53:53: server misbehaving
+
+2025/05/22 20:37:16 /home/engenme/projects/go-gin-clean-starter/config/database.go:75
+[error] failed to initialize database, got error failed to connect to `user=testuser database=testdb`:
+	hostname resolving error: lookup postgres on 127.0.0.53:53: server misbehaving
+	lookup postgres on 127.0.0.53:53: server misbehaving
+
+2025/05/22 20:38:29 /home/engenme/projects/go-gin-clean-starter/config/database.go:75
+[error] failed to initialize database, got error failed to connect to `user=testuser database=testdb`:
+	hostname resolving error: lookup postgres on 127.0.0.53:53: server misbehaving
+	lookup postgres on 127.0.0.53:53: server misbehaving
+
+2025/05/22 20:38:29 /home/engenme/projects/go-gin-clean-starter/config/database.go:75
+[error] failed to initialize database, got error failed to connect to `user=testuser database=testdb`:
+	hostname resolving error: lookup postgres on 127.0.0.53:53: server misbehaving
+	lookup postgres on 127.0.0.53:53: server misbehaving
+
+2025/05/22 20:40:26 /home/engenme/projects/go-gin-clean-starter/config/database.go:75
+[error] failed to initialize database, got error failed to connect to `user=testuser database=testdb`:
+	hostname resolving error: lookup postgres on 127.0.0.53:53: server misbehaving
+	lookup postgres on 127.0.0.53:53: server misbehaving
+
+2025/05/22 20:42:35 /home/engenme/projects/go-gin-clean-starter/config/database.go:75
+[error] failed to initialize database, got error failed to connect to `user=testuser database=testdb`:
+	hostname resolving error: lookup postgres on 127.0.0.53:53: server misbehaving
+	lookup postgres on 127.0.0.53:53: server misbehaving
+
+2025/05/22 20:43:39 /home/engenme/projects/go-gin-clean-starter/config/database.go:76
+[error] failed to initialize database, got error failed to connect to `user=testuser database=testdb`:
+	hostname resolving error: lookup postgres on 127.0.0.53:53: server misbehaving
+	lookup postgres on 127.0.0.53:53: server misbehaving
+
+2025/05/22 20:45:35 /home/engenme/projects/go-gin-clean-starter/config/database.go:77
+[error] failed to initialize database, got error failed to connect to `user=testuser database=testdb`:
+	hostname resolving error: lookup postgres on 127.0.0.53:53: server misbehaving
+	lookup postgres on 127.0.0.53:53: server misbehaving

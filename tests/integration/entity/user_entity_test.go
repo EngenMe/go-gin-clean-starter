@@ -1,6 +1,7 @@
 package entity_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -15,20 +16,27 @@ import (
 // TestMain sets up the environment for integration tests by initializing a test container and configuring database variables.
 // It ensures proper cleanup by stopping the test container after tests have run.
 func TestMain(m *testing.M) {
-	testContainer, err := container.StartTestContainer()
+	container.LoadTestEnv()
+
+	dbContainer, err := container.StartTestContainer()
 	if err != nil {
 		panic(err)
 	}
 
-	os.Setenv("DB_HOST", testContainer.Host)
-	os.Setenv("DB_USER", "testuser")
-	os.Setenv("DB_PASS", "testpassword")
-	os.Setenv("DB_NAME", "testdb")
-	os.Setenv("DB_PORT", testContainer.Port)
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
+	}
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
+	}
 
 	code := m.Run()
 
-	if err := testContainer.Stop(); err != nil {
+	if err := dbContainer.Stop(); err != nil {
 		panic(err)
 	}
 

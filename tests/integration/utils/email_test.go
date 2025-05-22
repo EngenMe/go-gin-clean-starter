@@ -2,6 +2,7 @@ package utils_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -27,31 +28,23 @@ type EmailIntegrationTestSuite struct {
 
 // SetupSuite initializes and configures the test environment, including database and SMTP containers with necessary settings.
 func (suite *EmailIntegrationTestSuite) SetupSuite() {
+	container.LoadTestEnv()
+
 	ctx := context.Background()
 
 	dbContainer, err := container.StartTestContainer()
 	require.NoError(suite.T(), err)
 	suite.dbContainer = dbContainer
 
-	err = os.Setenv("DB_HOST", dbContainer.Host)
-	if err != nil {
-		panic(err)
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
 	}
-	err = os.Setenv("DB_PORT", dbContainer.Port)
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_USER", "testuser")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PASS", "testpassword")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_NAME", "testdb")
-	if err != nil {
-		panic(err)
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
 	}
 
 	suite.db = container.SetUpDatabaseConnection()

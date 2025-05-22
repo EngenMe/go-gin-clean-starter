@@ -36,16 +36,23 @@ var (
 
 // TestMain is the entry point for running tests, initializing dependencies, and managing setup/teardown logic.
 func TestMain(m *testing.M) {
-	testContainer, err := container.StartTestContainer()
+	container.LoadTestEnv()
+
+	dbContainer, err := container.StartTestContainer()
 	if err != nil {
 		panic(fmt.Sprintf("Failed to start test container: %v", err))
 	}
 
-	os.Setenv("DB_HOST", testContainer.Host)
-	os.Setenv("DB_PORT", testContainer.Port)
-	os.Setenv("DB_USER", "testuser")
-	os.Setenv("DB_PASS", "testpassword")
-	os.Setenv("DB_NAME", "testdb")
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
+	}
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
+	}
 
 	db = container.SetUpDatabaseConnection()
 
@@ -75,7 +82,7 @@ func TestMain(m *testing.M) {
 	if err := container.CloseDatabaseConnection(db); err != nil {
 		fmt.Printf("Failed to close database connection: %v\n", err)
 	}
-	if err := testContainer.Stop(); err != nil {
+	if err := dbContainer.Stop(); err != nil {
 		fmt.Printf("Failed to stop test container: %v\n", err)
 	}
 

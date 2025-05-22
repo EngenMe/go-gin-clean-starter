@@ -1,4 +1,4 @@
-package routes_test
+package routes
 
 import (
 	"net/http"
@@ -12,14 +12,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/Caknoooo/go-gin-clean-starter/routes"
 )
 
-// TestLoggerRoute_Integration tests the integration of the LoggerRoute functionality with the Gin HTTP router.
+// TestLoggerRoute_Unit tests the unit of the LoggerRoute functionality with the Gin HTTP router.
 // It validates log retrieval endpoints for the current month, specific months, empty logs, and malformed logs.
 // This test functions by simulating HTTP requests to ensure correct responses, log retrieval, and template rendering.
-func TestLoggerRoute_Integration(t *testing.T) {
+func TestLoggerRoute_Unit(t *testing.T) {
 	tempDir := t.TempDir()
 	currentMonth := time.Now().Format("January")
 	testMonth := "December"
@@ -27,9 +25,9 @@ func TestLoggerRoute_Integration(t *testing.T) {
 	createTestLogFile(t, tempDir, currentMonth, "current_month_log1\n\ncurrent_month_log2\n")
 	createTestLogFile(t, tempDir, testMonth, "december_log1\n\ndecember_log2\n")
 
-	originalLogDir := routes.LOG_DIR
-	routes.LOG_DIR = tempDir
-	defer func() { routes.LOG_DIR = originalLogDir }()
+	originalLogDir := LOG_DIR
+	LOG_DIR = tempDir
+	defer func() { LOG_DIR = originalLogDir }()
 
 	gin.SetMode(gin.TestMode)
 	router := gin.Default()
@@ -58,11 +56,11 @@ func TestLoggerRoute_Integration(t *testing.T) {
 	err := os.WriteFile(tempHTMLFile, []byte(htmlContent), 0644)
 	require.NoError(t, err, "Failed to create temporary HTML template")
 
-	originalLogHTML := routes.LOG_HTML
-	routes.LOG_HTML = tempHTMLFile
-	defer func() { routes.LOG_HTML = originalLogHTML }()
+	originalLogHTML := LOG_HTML
+	LOG_HTML = tempHTMLFile
+	defer func() { LOG_HTML = originalLogHTML }()
 
-	routes.LoggerRoute(router)
+	LoggerRoute(router)
 
 	t.Run(
 		"GET /logs - current month", func(t *testing.T) {
@@ -158,8 +156,8 @@ func createTestLogFile(t *testing.T, dir string, month string, content string) {
 	require.NoError(t, err, "Failed to create test log file")
 }
 
-// TestReverseSlice_Integration tests the integration of ReverseSlice by verifying its behavior with various input scenarios.
-func TestReverseSlice_Integration(t *testing.T) {
+// TestReverseSlice_Unit tests the unit of ReverseSlice by verifying its behavior with various input scenarios.
+func TestReverseSlice_Unit(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    []string
@@ -190,7 +188,7 @@ func TestReverseSlice_Integration(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				result := routes.ReverseSlice(tt.input)
+				result := ReverseSlice(tt.input)
 				assert.Equal(t, tt.expected, result)
 			},
 		)

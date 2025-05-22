@@ -15,80 +15,58 @@ import (
 
 // EmailConfigTestSuite is a test suite for verifying email configuration using environment variables and test containers.
 type EmailConfigTestSuite struct {
-	suite.Suite
+	container.BaseSuite
 	emailContainer *container.TestDatabaseContainer
 }
 
-// SetupSuite initializes the test environment by starting a MailHog test container and setting necessary environment variables.
-func (suite *EmailConfigTestSuite) SetupSuite() {
-	testContainer, err := container.StartTestContainer()
-	require.NoError(suite.T(), err)
-	suite.emailContainer = testContainer
+// SetupSuite initializes the email configuration test suite by starting a test container and setting environment variables.
+func (s *EmailConfigTestSuite) SetupSuite() {
+	s.BaseSuite.SetupSuite()
 
-	err = os.Setenv("SMTP_HOST", testContainer.Host)
-	if err != nil {
-		panic(err)
+	dbContainer, err := container.StartTestContainer()
+	require.NoError(s.T(), err)
+	s.emailContainer = dbContainer
+
+	envVars := map[string]string{
+		"SMTP_HOST":          dbContainer.Host,
+		"SMTP_PORT":          dbContainer.Port,
+		"SMTP_SENDER_NAME":   container.GetEnvWithDefault("SMTP_SENDER_NAME", "Test Sender"),
+		"SMTP_AUTH_EMAIL":    container.GetEnvWithDefault("SMTP_AUTH_EMAIL", "test@example.com"),
+		"SMTP_AUTH_PASSWORD": container.GetEnvWithDefault("SMTP_AUTH_PASSWORD", "password123"),
 	}
-	err = os.Setenv("SMTP_PORT", testContainer.Port)
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("SMTP_SENDER_NAME", "Test Sender")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("SMTP_AUTH_EMAIL", "test@example.com")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("SMTP_AUTH_PASSWORD", "password123")
-	if err != nil {
-		panic(err)
-	}
+	s.SetupEnv(envVars)
 }
 
-// TearDownSuite cleans up test resources by unsetting environment variables and stopping the email test container.
-func (suite *EmailConfigTestSuite) TearDownSuite() {
-	err := os.Unsetenv("SMTP_HOST")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Unsetenv("SMTP_PORT")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Unsetenv("SMTP_SENDER_NAME")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Unsetenv("SMTP_AUTH_EMAIL")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Unsetenv("SMTP_AUTH_PASSWORD")
-	if err != nil {
-		panic(err)
-	}
+// TearDownSuite cleans up the test suite by unsetting environment variables and stopping the email test container.
+func (s *EmailConfigTestSuite) TearDownSuite() {
+	s.CleanupEnv(
+		[]string{
+			"SMTP_HOST",
+			"SMTP_PORT",
+			"SMTP_SENDER_NAME",
+			"SMTP_AUTH_EMAIL",
+			"SMTP_AUTH_PASSWORD",
+		},
+	)
 
-	if suite.emailContainer != nil {
-		err := suite.emailContainer.Stop()
-		require.NoError(suite.T(), err)
+	if s.emailContainer != nil {
+		require.NoError(s.T(), s.emailContainer.Stop())
 	}
 }
 
 // TestNewEmailConfig_Integration validates that a new EmailConfig is created correctly using environment variables.
 // Ensures no errors occur and verifies that configuration values match the expected environment variable settings.
-func (suite *EmailConfigTestSuite) TestNewEmailConfig_Integration() {
+func (s *EmailConfigTestSuite) TestNewEmailConfig_Integration() {
 	emailConfig, err := config.NewEmailConfig()
-	require.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), emailConfig)
+	require.NoError(s.T(), err)
+	assert.NotNil(s.T(), emailConfig)
 
-	assert.Equal(suite.T(), os.Getenv("SMTP_HOST"), emailConfig.Host)
+	assert.Equal(s.T(), os.Getenv("SMTP_HOST"), emailConfig.Host)
 	port, _ := strconv.Atoi(os.Getenv("SMTP_PORT"))
-	assert.Equal(suite.T(), port, emailConfig.Port)
-	assert.Equal(suite.T(), os.Getenv("SMTP_SENDER_NAME"), emailConfig.SenderName)
-	assert.Equal(suite.T(), os.Getenv("SMTP_AUTH_EMAIL"), emailConfig.AuthEmail)
-	assert.Equal(suite.T(), os.Getenv("SMTP_AUTH_PASSWORD"), emailConfig.AuthPassword)
+	assert.Equal(s.T(), port, emailConfig.Port)
+	assert.Equal(s.T(), os.Getenv("SMTP_SENDER_NAME"), emailConfig.SenderName)
+	assert.Equal(s.T(), os.Getenv("SMTP_AUTH_EMAIL"), emailConfig.AuthEmail)
+	assert.Equal(s.T(), os.Getenv("SMTP_AUTH_PASSWORD"), emailConfig.AuthPassword)
 }
 
 // TestEmailConfigTestSuite executes the test suite for email configuration using the EmailConfigTestSuite.

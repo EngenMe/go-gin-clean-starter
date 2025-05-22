@@ -28,13 +28,13 @@ type CommandTestSuite struct {
 func (suite *CommandTestSuite) SetupSuite() {
 	suite.injector = do.New()
 
-	testContainer, err := container.StartTestContainer()
+	dbContainer, err := container.StartTestContainer()
 	if err != nil {
 		suite.T().Fatalf("Failed to start test container: %v", err)
 	}
 
-	os.Setenv("DB_HOST", testContainer.Host)
-	os.Setenv("DB_PORT", testContainer.Port)
+	os.Setenv("DB_HOST", dbContainer.Host)
+	os.Setenv("DB_PORT", dbContainer.Port)
 	os.Setenv("DB_USER", "testuser")
 	os.Setenv("DB_PASS", "testpassword")
 	os.Setenv("DB_NAME", "testdb")

@@ -20,45 +20,32 @@ import (
 
 // LoggerIntegrationTestSuite is a test suite for verifying database logging and integration functionality.
 type LoggerIntegrationTestSuite struct {
-	suite.Suite
+	container.BaseSuite
 	dbContainer *container.TestDatabaseContainer
 	db          *gorm.DB
 	testLogDir  string
 }
 
-// SetupSuite initializes the test suite by setting up the test environment, database container, and logger configuration.
-func (suite *LoggerIntegrationTestSuite) SetupSuite() {
-	suite.testLogDir = "./test_logs_integration"
-	config.LogDir = suite.testLogDir
-	err := os.MkdirAll(suite.testLogDir, 0755)
-	if err != nil {
-		return
-	}
+// SetupSuite initializes the test suite by setting up a test database, environment variables, and logging configuration.
+func (s *LoggerIntegrationTestSuite) SetupSuite() {
+	s.BaseSuite.SetupSuite()
 
-	testContainer, err := container.StartTestContainer()
-	require.NoError(suite.T(), err)
-	suite.dbContainer = testContainer
+	s.testLogDir = "./test_logs_integration"
+	config.LogDir = s.testLogDir
+	require.NoError(s.T(), os.MkdirAll(s.testLogDir, 0755))
 
-	err = os.Setenv("DB_HOST", testContainer.Host)
-	if err != nil {
-		panic(err)
+	dbContainer, err := container.StartTestContainer()
+	require.NoError(s.T(), err)
+	s.dbContainer = dbContainer
+
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
 	}
-	err = os.Setenv("DB_PORT", testContainer.Port)
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_USER", "testuser")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PASS", "testpassword")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_NAME", "testdb")
-	if err != nil {
-		panic(err)
-	}
+	s.SetupEnv(envVars)
 
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
@@ -69,72 +56,52 @@ func (suite *LoggerIntegrationTestSuite) SetupSuite() {
 		os.Getenv("DB_PORT"),
 	)
 
-	suite.db, err = gorm.Open(
+	s.db, err = gorm.Open(
 		postgres.Open(dsn), &gorm.Config{
 			Logger: config.SetupLogger(),
 		},
 	)
-	require.NoError(suite.T(), err)
+	require.NoError(s.T(), err)
 
-	err = suite.db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error
-	require.NoError(suite.T(), err)
+	err = s.db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error
+	require.NoError(s.T(), err)
 }
 
-// TearDownSuite cleans up resources used during the test suite, including database connections, environment variables, and logs.
-func (suite *LoggerIntegrationTestSuite) TearDownSuite() {
-	if suite.db != nil {
-		sqlDB, err := suite.db.DB()
+// TearDownSuite cleans up resources used during the test suite, including closing the database, stopping containers, and resetting environment variables.
+func (s *LoggerIntegrationTestSuite) TearDownSuite() {
+	if s.db != nil {
+		sqlDB, err := s.db.DB()
 		if err == nil {
-			err := sqlDB.Close()
-			if err != nil {
-				panic(err)
-			}
+			require.NoError(s.T(), sqlDB.Close())
 		}
 	}
 
-	if suite.dbContainer != nil {
-		err := suite.dbContainer.Stop()
-		if err != nil {
-			panic(err)
-		}
+	if s.dbContainer != nil {
+		require.NoError(s.T(), s.dbContainer.Stop())
 	}
 
-	err := os.Unsetenv("DB_HOST")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Unsetenv("DB_PORT")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Unsetenv("DB_USER")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Unsetenv("DB_PASS")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Unsetenv("DB_NAME")
-	if err != nil {
-		panic(err)
-	}
+	s.CleanupEnv(
+		[]string{
+			"DB_HOST",
+			"DB_PORT",
+			"DB_USER",
+			"DB_PASS",
+			"DB_NAME",
+		},
+	)
 
-	err = os.RemoveAll(suite.testLogDir)
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(s.T(), os.RemoveAll(s.testLogDir))
 }
 
 // TestLoggerWithDatabaseOperations verifies that database operations are logged correctly and log files are properly generated.
-func (suite *LoggerIntegrationTestSuite) TestLoggerWithDatabaseOperations() {
+func (s *LoggerIntegrationTestSuite) TestLoggerWithDatabaseOperations() {
 	type TestModel struct {
 		ID   uint `gorm:"primaryKey"`
 		Name string
 	}
 
-	err := suite.db.AutoMigrate(&TestModel{})
-	require.NoError(suite.T(), err)
+	err := s.db.AutoMigrate(&TestModel{})
+	require.NoError(s.T(), err)
 
 	tests := []struct {
 		name string
@@ -143,33 +110,33 @@ func (suite *LoggerIntegrationTestSuite) TestLoggerWithDatabaseOperations() {
 		{
 			name: "Create record",
 			op: func() error {
-				return suite.db.Create(&TestModel{Name: "test"}).Error
+				return s.db.Create(&TestModel{Name: "test"}).Error
 			},
 		},
 		{
 			name: "Find existing record",
 			op: func() error {
 				var result TestModel
-				return suite.db.First(&result, 1).Error
+				return s.db.First(&result, 1).Error
 			},
 		},
 		{
 			name: "Find non-existent record",
 			op: func() error {
 				var result TestModel
-				return suite.db.First(&result, 999).Error
+				return s.db.First(&result, 999).Error
 			},
 		},
 	}
 
 	for _, tt := range tests {
-		suite.Run(
+		s.Run(
 			tt.name, func() {
 				err := tt.op()
 				if tt.name == "Find non-existent record" {
-					assert.Error(suite.T(), err)
+					assert.Error(s.T(), err)
 				} else {
-					assert.NoError(suite.T(), err)
+					assert.NoError(s.T(), err)
 				}
 			},
 		)
@@ -177,11 +144,11 @@ func (suite *LoggerIntegrationTestSuite) TestLoggerWithDatabaseOperations() {
 
 	currentMonth := strings.ToLower(time.Now().Format("January"))
 	logFileName := fmt.Sprintf("%s_query.log", currentMonth)
-	logPath := filepath.Join(suite.testLogDir, logFileName)
+	logPath := filepath.Join(s.testLogDir, logFileName)
 
 	fileInfo, err := os.Stat(logPath)
-	require.NoError(suite.T(), err)
-	assert.Greater(suite.T(), fileInfo.Size(), int64(0))
+	require.NoError(s.T(), err)
+	assert.Greater(s.T(), fileInfo.Size(), int64(0))
 }
 
 // TestLoggerIntegrationTestSuite runs the LoggerIntegrationTestSuite to verify database logging and integration functionality.

@@ -2,7 +2,7 @@ package repository_test
 
 import (
 	"context"
-	"os"
+	"fmt"
 	"testing"
 	"time"
 
@@ -17,36 +17,28 @@ import (
 
 // TestRefreshTokenRepository tests the functionality of the RefreshTokenRepository including create, find, and delete operations.
 func TestRefreshTokenRepository(t *testing.T) {
-	testContainer, err := container.StartTestContainer()
+	container.LoadTestEnv()
+
+	dbContainer, err := container.StartTestContainer()
 	if err != nil {
 		t.Fatalf("failed to start test container: %v", err)
 	}
-	defer func(testContainer *container.TestDatabaseContainer) {
-		err := testContainer.Stop()
+	defer func(dbContainer *container.TestDatabaseContainer) {
+		err := dbContainer.Stop()
 		if err != nil {
 			panic(err)
 		}
-	}(testContainer)
+	}(dbContainer)
 
-	err = os.Setenv("DB_HOST", testContainer.Host)
-	if err != nil {
-		panic(err)
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
 	}
-	err = os.Setenv("DB_USER", "testuser")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PASS", "testpassword")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_NAME", "testdb")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PORT", testContainer.Port)
-	if err != nil {
-		panic(err)
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
 	}
 
 	db := container.SetUpDatabaseConnection()

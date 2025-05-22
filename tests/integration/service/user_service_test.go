@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"gorm.io/gorm"
 	"os"
 	"path/filepath"
@@ -67,6 +68,8 @@ func (m *MockDialer) DialAndSend(messages ...*gomail.Message) error {
 
 // TestUserService_Register tests the user registration process, ensuring proper handling of valid and conflicting inputs.
 func TestUserService_Register(t *testing.T) {
+	container.LoadTestEnv()
+
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -76,38 +79,20 @@ func TestUserService_Register(t *testing.T) {
 		}
 	}(dbContainer)
 
-	err = os.Setenv("DB_HOST", dbContainer.Host)
-	if err != nil {
-		panic(err)
+	envVars := map[string]string{
+		"DB_HOST":            dbContainer.Host,
+		"DB_PORT":            dbContainer.Port,
+		"DB_USER":            container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS":            container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME":            container.GetEnvWithDefault("DB_NAME", "testdb"),
+		"SMTP_HOST":          dbContainer.Host,
+		"SMTP_PORT":          dbContainer.Port,
+		"SMTP_SENDER_NAME":   container.GetEnvWithDefault("SMTP_SENDER_NAME", "Test Sender"),
+		"SMTP_AUTH_EMAIL":    container.GetEnvWithDefault("SMTP_AUTH_EMAIL", "test@example.com"),
+		"SMTP_AUTH_PASSWORD": container.GetEnvWithDefault("SMTP_AUTH_PASSWORD", "password123"),
 	}
-	err = os.Setenv("DB_USER", "testuser")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PASS", "testpassword")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_NAME", "testdb")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PORT", dbContainer.Port)
-	if err != nil {
-		panic(err)
-	}
-
-	err = os.Setenv("SMTP_HOST", "smtp.example.com")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("SMTP_AUTH_EMAIL", "user@example.com")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("SMTP_AUTH_PASSWORD", "password123")
-	if err != nil {
-		panic(err)
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
 	}
 
 	db := container.SetUpDatabaseConnection()
