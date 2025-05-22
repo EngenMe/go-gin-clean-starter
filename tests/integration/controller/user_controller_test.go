@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -133,11 +134,15 @@ func TestRegister(t *testing.T) {
 				body := new(bytes.Buffer)
 				writer := multipart.NewWriter(body)
 
-				writer.WriteField("name", tt.payload.Name)
-				writer.WriteField("email", tt.payload.Email)
-				writer.WriteField("password", tt.payload.Password)
+				err := writer.WriteField("name", tt.payload.Name)
+				require.NoError(t, err)
+				err = writer.WriteField("email", tt.payload.Email)
+				require.NoError(t, err)
+				err = writer.WriteField("password", tt.payload.Password)
+				require.NoError(t, err)
 				if tt.payload.TelpNumber != "" {
-					writer.WriteField("telp_number", tt.payload.TelpNumber)
+					err := writer.WriteField("telp_number", tt.payload.TelpNumber)
+					require.NoError(t, err)
 				}
 
 				if tt.payload.Image != nil {
@@ -151,7 +156,8 @@ func TestRegister(t *testing.T) {
 					}
 				}
 
-				writer.Close()
+				err = writer.Close()
+				require.NoError(t, err)
 
 				req, err := http.NewRequest("POST", "/user", body)
 				if err != nil {
@@ -213,10 +219,14 @@ func TestGetAllUser(t *testing.T) {
 	for _, user := range testUsers {
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
-		writer.WriteField("name", user.Name)
-		writer.WriteField("email", user.Email)
-		writer.WriteField("password", user.Password)
-		writer.Close()
+		err := writer.WriteField("name", user.Name)
+		require.NoError(t, err)
+		err = writer.WriteField("email", user.Email)
+		require.NoError(t, err)
+		err = writer.WriteField("password", user.Password)
+		require.NoError(t, err)
+		err = writer.Close()
+		require.NoError(t, err)
 
 		req, err := http.NewRequest("POST", "/user", body)
 		if err != nil {
@@ -651,6 +661,8 @@ func TestSendVerificationEmail(t *testing.T) {
 
 // TestVerifyEmail tests the email verification functionality with various scenarios and validates expected responses and outcomes.
 func TestVerifyEmail(t *testing.T) {
+	container.LoadTestEnv()
+
 	dbContainer, err := container.StartTestContainer()
 	if err != nil {
 		t.Fatalf("Failed to start test container: %v", err)
@@ -661,11 +673,16 @@ func TestVerifyEmail(t *testing.T) {
 		}
 	}()
 
-	os.Setenv("DB_HOST", dbContainer.Host)
-	os.Setenv("DB_USER", "testuser")
-	os.Setenv("DB_PASS", "testpassword")
-	os.Setenv("DB_NAME", "testdb")
-	os.Setenv("DB_PORT", dbContainer.Port)
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
+	}
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
+	}
 
 	db := container.SetUpDatabaseConnection()
 	defer func() {
@@ -801,6 +818,8 @@ func TestVerifyEmail(t *testing.T) {
 // TestUpdate is a unit test function for testing the Update endpoint of the UserController.
 // It validates cases such as successful updates, invalid input formats, and unauthorized access scenarios.
 func TestUpdate(t *testing.T) {
+	container.LoadTestEnv()
+
 	dbContainer, err := container.StartTestContainer()
 	if err != nil {
 		t.Fatalf("Failed to start test container: %v", err)
@@ -811,11 +830,16 @@ func TestUpdate(t *testing.T) {
 		}
 	}()
 
-	os.Setenv("DB_HOST", dbContainer.Host)
-	os.Setenv("DB_USER", "testuser")
-	os.Setenv("DB_PASS", "testpassword")
-	os.Setenv("DB_NAME", "testdb")
-	os.Setenv("DB_PORT", dbContainer.Port)
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
+	}
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
+	}
 
 	db := container.SetUpDatabaseConnection()
 	defer func() {

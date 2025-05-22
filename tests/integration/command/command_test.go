@@ -1,6 +1,8 @@
 package command_test
 
 import (
+	"fmt"
+	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 
@@ -26,6 +28,8 @@ type CommandTestSuite struct {
 
 // SetupSuite initializes the test suite by configuring dependencies, starting a test container, and setting up a database.
 func (suite *CommandTestSuite) SetupSuite() {
+	container.LoadTestEnv()
+
 	suite.injector = do.New()
 
 	dbContainer, err := container.StartTestContainer()
@@ -33,11 +37,16 @@ func (suite *CommandTestSuite) SetupSuite() {
 		suite.T().Fatalf("Failed to start test container: %v", err)
 	}
 
-	os.Setenv("DB_HOST", dbContainer.Host)
-	os.Setenv("DB_PORT", dbContainer.Port)
-	os.Setenv("DB_USER", "testuser")
-	os.Setenv("DB_PASS", "testpassword")
-	os.Setenv("DB_NAME", "testdb")
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
+	}
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
+	}
 
 	db := container.SetUpDatabaseConnection()
 	suite.db = db
@@ -80,7 +89,8 @@ func (suite *CommandTestSuite) TestCommands_Migrate() {
 
 // TestCommands_Seed validates that the seeding process populates the database and correctly sets the seed flag behavior.
 func (suite *CommandTestSuite) TestCommands_Seed() {
-	suite.db.AutoMigrate(&entity.User{})
+	err := suite.db.AutoMigrate(&entity.User{})
+	require.NoError(suite.T(), err, "Failed to auto migrate database")
 
 	os.Args = []string{"cmd", "--seed"}
 

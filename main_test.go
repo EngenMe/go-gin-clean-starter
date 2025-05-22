@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 
@@ -84,8 +85,14 @@ func TestRun(t *testing.T) {
 	t.Run(
 		"with custom port", func(t *testing.T) {
 			oldPort := os.Getenv("PORT")
-			defer func() { os.Setenv("PORT", oldPort) }()
-			os.Setenv("PORT", "9999")
+			defer func() {
+				err := os.Setenv("PORT", oldPort)
+				if err != nil {
+					panic(err)
+				}
+			}()
+			err := os.Setenv("PORT", "9999")
+			require.NoError(t, err)
 
 			server := gin.Default()
 			called := false
@@ -106,8 +113,14 @@ func TestRun(t *testing.T) {
 	t.Run(
 		"dev environment", func(t *testing.T) {
 			oldEnv := os.Getenv("APP_ENV")
-			defer func() { os.Setenv("APP_ENV", oldEnv) }()
-			os.Setenv("APP_ENV", "dev")
+			defer func() {
+				err := os.Setenv("APP_ENV", oldEnv)
+				if err != nil {
+					panic(err)
+				}
+			}()
+			err := os.Setenv("APP_ENV", "dev")
+			require.NoError(t, err)
 
 			server := gin.Default()
 			called := false
@@ -127,8 +140,14 @@ func TestRun(t *testing.T) {
 	t.Run(
 		"prod environment", func(t *testing.T) {
 			oldEnv := os.Getenv("APP_ENV")
-			defer func() { os.Setenv("APP_ENV", oldEnv) }()
-			os.Setenv("APP_ENV", "prod")
+			defer func() {
+				err := os.Setenv("APP_ENV", oldEnv)
+				if err != nil {
+					panic(err)
+				}
+			}()
+			err := os.Setenv("APP_ENV", "prod")
+			require.NoError(t, err)
 
 			server := gin.Default()
 			called := false

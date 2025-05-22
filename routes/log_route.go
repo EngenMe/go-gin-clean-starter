@@ -57,7 +57,12 @@ func Logger(c *gin.Context) {
 		)
 		return
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(file)
 
 	var logs []string
 	scanner := bufio.NewScanner(file)

@@ -69,25 +69,15 @@ func (suite *EmailIntegrationTestSuite) SetupSuite() {
 	smtpPort, err := smtpContainer.MappedPort(ctx, "1025")
 	require.NoError(suite.T(), err)
 
-	err = os.Setenv("SMTP_HOST", smtpHost)
-	if err != nil {
-		panic(err)
+	envVars = map[string]string{
+		"SMTP_HOST":          smtpHost,
+		"SMTP_PORT":          smtpPort.Port(),
+		"SMTP_SENDER_NAME":   container.GetEnvWithDefault("SMTP_SENDER_NAME", "Test Sender"),
+		"SMTP_AUTH_EMAIL":    container.GetEnvWithDefault("SMTP_AUTH_EMAIL", "test@example.com"),
+		"SMTP_AUTH_PASSWORD": container.GetEnvWithDefault("SMTP_AUTH_PASSWORD", "password123"),
 	}
-	err = os.Setenv("SMTP_PORT", smtpPort.Port())
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("SMTP_AUTH_EMAIL", "test@example.com")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("SMTP_AUTH_PASSWORD", "password")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("SMTP_SENDER_NAME", "Test Sender")
-	if err != nil {
-		panic(err)
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
 	}
 }
 

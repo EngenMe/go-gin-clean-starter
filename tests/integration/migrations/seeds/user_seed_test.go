@@ -3,6 +3,7 @@ package seeds
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
 	"testing"
@@ -101,12 +102,14 @@ func (suite *SeedsTestSuite) TearDownSuite() {
 		}
 	}
 
-	os.Remove(suite.tempJSONPath)
+	err := os.Remove(suite.tempJSONPath)
+	require.NoError(suite.T(), err, "Failed to remove temporary JSON file")
 }
 
 // BeforeTest cleans up the database by dropping the User table and resets the `usedTestJSON` flag before running a test.
 func (suite *SeedsTestSuite) BeforeTest(suiteName, testName string) {
-	suite.db.Migrator().DropTable(&entity.User{})
+	err := suite.db.Migrator().DropTable(&entity.User{})
+	require.NoError(suite.T(), err, "Failed to drop table")
 	suite.usedTestJSON = false
 }
 
@@ -135,7 +138,8 @@ func (suite *SeedsTestSuite) setupTestJSON() (string, error) {
 // cleanupTestJSON removes the specified JSON file if it was created during the test run, as indicated by the `usedTestJSON` flag.
 func (suite *SeedsTestSuite) cleanupTestJSON(jsonPath string) {
 	if suite.usedTestJSON {
-		os.Remove(jsonPath)
+		err := os.Remove(jsonPath)
+		require.NoError(suite.T(), err, "Failed to remove test JSON file")
 	}
 }
 
@@ -192,7 +196,8 @@ func (suite *SeedsTestSuite) TestListUserSeeder_TableCreation() {
 	}
 	defer func() { helpers.GetProjectRoot = oldGetProjectRoot }()
 
-	suite.db.Migrator().DropTable(&entity.User{})
+	err = suite.db.Migrator().DropTable(&entity.User{})
+	require.NoError(suite.T(), err, "Failed to drop table")
 
 	err = seeds.ListUserSeeder(suite.db)
 	assert.NoError(suite.T(), err, "Seeder should not return error")
@@ -280,7 +285,12 @@ func createTestJSONFile(path string, data []SeedUserRequest) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(file)
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")

@@ -423,11 +423,6 @@ func (s *userService) Verify(ctx context.Context, req dto.UserLoginRequest) (dto
 
 	refreshTokenString, expiresAt := s.jwtService.GenerateRefreshToken()
 
-	if err != nil {
-		tx.Rollback()
-		return dto.TokenResponse{}, err
-	}
-
 	if err := s.refreshTokenRepo.DeleteByUserID(ctx, tx, user.ID.String()); err != nil {
 		tx.Rollback()
 		return dto.TokenResponse{}, err

@@ -230,38 +230,20 @@ func TestUserService_GetAllUserWithPagination(t *testing.T) {
 		}
 	}(dbContainer)
 
-	err = os.Setenv("DB_HOST", dbContainer.Host)
-	if err != nil {
-		panic(err)
+	envVars := map[string]string{
+		"DB_HOST":            dbContainer.Host,
+		"DB_PORT":            dbContainer.Port,
+		"DB_USER":            container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS":            container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME":            container.GetEnvWithDefault("DB_NAME", "testdb"),
+		"SMTP_HOST":          dbContainer.Host,
+		"SMTP_PORT":          dbContainer.Port,
+		"SMTP_SENDER_NAME":   container.GetEnvWithDefault("SMTP_SENDER_NAME", "Test Sender"),
+		"SMTP_AUTH_EMAIL":    container.GetEnvWithDefault("SMTP_AUTH_EMAIL", "test@example.com"),
+		"SMTP_AUTH_PASSWORD": container.GetEnvWithDefault("SMTP_AUTH_PASSWORD", "password123"),
 	}
-	err = os.Setenv("DB_USER", "testuser")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PASS", "testpassword")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_NAME", "testdb")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PORT", dbContainer.Port)
-	if err != nil {
-		panic(err)
-	}
-
-	err = os.Setenv("SMTP_HOST", "smtp.example.com")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("SMTP_AUTH_EMAIL", "user@example.com")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("SMTP_AUTH_PASSWORD", "password123")
-	if err != nil {
-		panic(err)
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
 	}
 
 	db := container.SetUpDatabaseConnection()
@@ -422,6 +404,8 @@ func TestUserService_GetAllUserWithPagination(t *testing.T) {
 
 // TestUserService_GetUserById tests the functionality of retrieving a user by their ID using the GetUserById service method.
 func TestUserService_GetUserById(t *testing.T) {
+	container.LoadTestEnv()
+
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -431,25 +415,15 @@ func TestUserService_GetUserById(t *testing.T) {
 		}
 	}(dbContainer)
 
-	err = os.Setenv("DB_HOST", dbContainer.Host)
-	if err != nil {
-		panic(err)
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
 	}
-	err = os.Setenv("DB_USER", "testuser")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PASS", "testpassword")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_NAME", "testdb")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PORT", dbContainer.Port)
-	if err != nil {
-		panic(err)
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
 	}
 
 	db := container.SetUpDatabaseConnection()
@@ -552,6 +526,8 @@ func TestUserService_GetUserById(t *testing.T) {
 
 // TestUserService_GetUserByEmail tests the UserService GetUserByEmail method for various scenarios such as success and error cases.
 func TestUserService_GetUserByEmail(t *testing.T) {
+	container.LoadTestEnv()
+
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -561,25 +537,15 @@ func TestUserService_GetUserByEmail(t *testing.T) {
 		}
 	}(dbContainer)
 
-	err = os.Setenv("DB_HOST", dbContainer.Host)
-	if err != nil {
-		panic(err)
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
 	}
-	err = os.Setenv("DB_USER", "testuser")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PASS", "testpassword")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_NAME", "testdb")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PORT", dbContainer.Port)
-	if err != nil {
-		panic(err)
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
 	}
 
 	db := container.SetUpDatabaseConnection()
@@ -682,6 +648,8 @@ func TestUserService_GetUserByEmail(t *testing.T) {
 
 // TestUserService_SendVerificationEmail tests the UserService.SendVerificationEmail method with different scenarios and validations.
 func TestUserService_SendVerificationEmail(t *testing.T) {
+	container.LoadTestEnv()
+
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -691,25 +659,15 @@ func TestUserService_SendVerificationEmail(t *testing.T) {
 		}
 	}(dbContainer)
 
-	err = os.Setenv("DB_HOST", dbContainer.Host)
-	if err != nil {
-		panic(err)
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
 	}
-	err = os.Setenv("DB_USER", "testuser")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PASS", "testpassword")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_NAME", "testdb")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PORT", dbContainer.Port)
-	if err != nil {
-		panic(err)
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
 	}
 
 	db := container.SetUpDatabaseConnection()
@@ -859,6 +817,8 @@ func TestUserService_SendVerificationEmail(t *testing.T) {
 // It covers scenarios such as successful email verification, expired tokens, invalid token formats,
 // already verified accounts, non-existent users, and malformed token content.
 func TestUserService_VerifyEmail(t *testing.T) {
+	container.LoadTestEnv()
+
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -868,25 +828,15 @@ func TestUserService_VerifyEmail(t *testing.T) {
 		}
 	}(dbContainer)
 
-	err = os.Setenv("DB_HOST", dbContainer.Host)
-	if err != nil {
-		panic(err)
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
 	}
-	err = os.Setenv("DB_USER", "testuser")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PASS", "testpassword")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_NAME", "testdb")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PORT", dbContainer.Port)
-	if err != nil {
-		panic(err)
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
 	}
 
 	originalKey := utils.KEY
@@ -1075,6 +1025,8 @@ func TestUserService_VerifyEmail(t *testing.T) {
 
 // TestUserService_Update tests the Update method of the UserService for both success and error scenarios.
 func TestUserService_Update(t *testing.T) {
+	container.LoadTestEnv()
+
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -1084,25 +1036,15 @@ func TestUserService_Update(t *testing.T) {
 		}
 	}(dbContainer)
 
-	err = os.Setenv("DB_HOST", dbContainer.Host)
-	if err != nil {
-		panic(err)
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
 	}
-	err = os.Setenv("DB_USER", "testuser")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PASS", "testpassword")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_NAME", "testdb")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PORT", dbContainer.Port)
-	if err != nil {
-		panic(err)
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
 	}
 
 	db := container.SetUpDatabaseConnection()
@@ -1213,6 +1155,8 @@ func TestUserService_Update(t *testing.T) {
 // TestUserService_Delete tests the Delete functionality of the UserService.
 // It validates user deletion, handling of non-existent users, and deletion with associated refresh tokens.
 func TestUserService_Delete(t *testing.T) {
+	container.LoadTestEnv()
+
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -1222,25 +1166,15 @@ func TestUserService_Delete(t *testing.T) {
 		}
 	}(dbContainer)
 
-	err = os.Setenv("DB_HOST", dbContainer.Host)
-	if err != nil {
-		panic(err)
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
 	}
-	err = os.Setenv("DB_USER", "testuser")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PASS", "testpassword")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_NAME", "testdb")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PORT", dbContainer.Port)
-	if err != nil {
-		panic(err)
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
 	}
 
 	db := container.SetUpDatabaseConnection()
@@ -1384,6 +1318,8 @@ func TestUserService_Delete(t *testing.T) {
 
 // TestUserService_Verify tests the user verification logic, including token generation and validation for multiple scenarios.
 func TestUserService_Verify(t *testing.T) {
+	container.LoadTestEnv()
+
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -1393,25 +1329,15 @@ func TestUserService_Verify(t *testing.T) {
 		}
 	}(dbContainer)
 
-	err = os.Setenv("DB_HOST", dbContainer.Host)
-	if err != nil {
-		panic(err)
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
 	}
-	err = os.Setenv("DB_USER", "testuser")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PASS", "testpassword")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_NAME", "testdb")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PORT", dbContainer.Port)
-	if err != nil {
-		panic(err)
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
 	}
 
 	db := container.SetUpDatabaseConnection()
@@ -1581,6 +1507,8 @@ func TestUserService_Verify(t *testing.T) {
 
 // TestUserService_RefreshToken tests the functionality of refreshing a user's token through scenarios like success, invalid, and expired tokens.
 func TestUserService_RefreshToken(t *testing.T) {
+	container.LoadTestEnv()
+
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -1590,25 +1518,15 @@ func TestUserService_RefreshToken(t *testing.T) {
 		}
 	}(dbContainer)
 
-	err = os.Setenv("DB_HOST", dbContainer.Host)
-	if err != nil {
-		panic(err)
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
 	}
-	err = os.Setenv("DB_USER", "testuser")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PASS", "testpassword")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_NAME", "testdb")
-	if err != nil {
-		panic(err)
-	}
-	err = os.Setenv("DB_PORT", dbContainer.Port)
-	if err != nil {
-		panic(err)
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
 	}
 
 	db := container.SetUpDatabaseConnection()
@@ -1762,6 +1680,8 @@ func TestUserService_RefreshToken(t *testing.T) {
 
 // TestUserService_RevokeRefreshToken tests the RevokeRefreshToken function of UserService with various scenarios and assertions.
 func TestUserService_RevokeRefreshToken(t *testing.T) {
+	container.LoadTestEnv()
+
 	dbContainer, err := container.StartTestContainer()
 	assert.NoError(t, err)
 	defer func(dbContainer *container.TestDatabaseContainer) {
@@ -1771,16 +1691,16 @@ func TestUserService_RevokeRefreshToken(t *testing.T) {
 		}
 	}(dbContainer)
 
-	err = os.Setenv("DB_HOST", dbContainer.Host)
-	assert.NoError(t, err)
-	err = os.Setenv("DB_USER", "testuser")
-	assert.NoError(t, err)
-	err = os.Setenv("DB_PASS", "testpassword")
-	assert.NoError(t, err)
-	err = os.Setenv("DB_NAME", "testdb")
-	assert.NoError(t, err)
-	err = os.Setenv("DB_PORT", dbContainer.Port)
-	assert.NoError(t, err)
+	envVars := map[string]string{
+		"DB_HOST": dbContainer.Host,
+		"DB_PORT": dbContainer.Port,
+		"DB_USER": container.GetEnvWithDefault("DB_USER", "testuser"),
+		"DB_PASS": container.GetEnvWithDefault("DB_PASS", "testpassword"),
+		"DB_NAME": container.GetEnvWithDefault("DB_NAME", "testdb"),
+	}
+	if err := container.SetEnv(envVars); err != nil {
+		panic(fmt.Sprintf("Failed to set env vars: %v", err))
+	}
 
 	db := container.SetUpDatabaseConnection()
 	defer func(db *gorm.DB) {

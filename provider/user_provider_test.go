@@ -18,7 +18,7 @@ import (
 type mockJWTService struct{}
 
 // GenerateAccessToken generates a mock access token for the given userID and role, primarily used for testing purposes.
-func (m *mockJWTService) GenerateAccessToken(userID string, role string) string {
+func (m *mockJWTService) GenerateAccessToken(_ string, _ string) string {
 	return "mock-access-token"
 }
 
@@ -28,7 +28,7 @@ func (m *mockJWTService) GenerateRefreshToken() (string, time.Time) {
 }
 
 // GetUserIDByToken extracts the user ID from the given token and returns it along with any potential error encountered.
-func (m *mockJWTService) GetUserIDByToken(token string) (string, error) {
+func (m *mockJWTService) GetUserIDByToken(_ string) (string, error) {
 	return "mock-user-id", nil
 }
 

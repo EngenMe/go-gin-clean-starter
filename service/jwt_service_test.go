@@ -12,8 +12,14 @@ import (
 
 // TestNewJWTService validates the creation of a new JWTService instance and checks its configurations and behavior.
 func TestNewJWTService(t *testing.T) {
-	os.Setenv("JWT_SECRET", "test-secret")
-	defer os.Unsetenv("JWT_SECRET")
+	err := os.Setenv("JWT_SECRET", "test-secret")
+	require.NoError(t, err)
+	defer func() {
+		err := os.Unsetenv("JWT_SECRET")
+		if err != nil {
+			panic(err)
+		}
+	}()
 
 	service := NewJWTService()
 	assert.NotNil(t, service)
@@ -24,7 +30,8 @@ func TestNewJWTService(t *testing.T) {
 	assert.Equal(t, time.Minute*15, jwtService.accessExpiry)
 	assert.Equal(t, time.Hour*24*7, jwtService.refreshExpiry)
 
-	os.Unsetenv("JWT_SECRET")
+	err = os.Unsetenv("JWT_SECRET")
+	require.NoError(t, err)
 	service = NewJWTService()
 	assert.Equal(t, "test-secret", jwtService.secretKey)
 }
@@ -114,10 +121,18 @@ func TestGetUserIDByToken(t *testing.T) {
 
 // TestGetSecretKey verifies that the getSecretKey function returns the correct value based on the presence of environment variables.
 func TestGetSecretKey(t *testing.T) {
-	os.Setenv("JWT_SECRET", "custom-secret")
-	defer os.Unsetenv("JWT_SECRET")
+	err := os.Setenv("JWT_SECRET", "custom-secret")
+	require.NoError(t, err)
+
+	defer func() {
+		err := os.Unsetenv("JWT_SECRET")
+		if err != nil {
+			panic(err)
+		}
+	}()
 	assert.Equal(t, "custom-secret", getSecretKey())
 
-	os.Unsetenv("JWT_SECRET")
+	err = os.Unsetenv("JWT_SECRET")
+	require.NoError(t, err)
 	assert.Equal(t, "Template", getSecretKey())
 }

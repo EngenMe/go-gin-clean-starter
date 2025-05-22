@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -108,10 +109,14 @@ func TestUserRoutes(t *testing.T) {
 
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
-		writer.WriteField("name", registerReq.Name)
-		writer.WriteField("email", registerReq.Email)
-		writer.WriteField("password", registerReq.Password)
-		writer.Close()
+		err := writer.WriteField("name", registerReq.Name)
+		require.NoError(t, err)
+		err = writer.WriteField("email", registerReq.Email)
+		require.NoError(t, err)
+		err = writer.WriteField("password", registerReq.Password)
+		require.NoError(t, err)
+		err = writer.Close()
+		require.NoError(t, err)
 
 		regReq, err := http.NewRequest("POST", "/api/user", body)
 		if err != nil {
@@ -322,7 +327,8 @@ func TestUserRoutes(t *testing.T) {
 							}
 						}
 					}
-					writer.Close()
+					err := writer.Close()
+					require.NoError(t, err)
 
 					req, err = http.NewRequest(tt.method, tt.path, body)
 					if err != nil {
