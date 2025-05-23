@@ -25,6 +25,7 @@ import (
 	"github.com/swaggo/gin-swagger"
 
 	"github.com/Caknoooo/go-gin-clean-starter/command"
+	_ "github.com/Caknoooo/go-gin-clean-starter/docs"
 	"github.com/Caknoooo/go-gin-clean-starter/middleware"
 	"github.com/Caknoooo/go-gin-clean-starter/provider"
 	"github.com/Caknoooo/go-gin-clean-starter/routes"

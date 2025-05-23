@@ -111,7 +111,7 @@ type (
 		PhoneNumber string                `json:"phone_number" form:"phone_number" binding:"omitempty,min=8,max=20"`
 		Email       string                `json:"email" form:"email" binding:"required,email"`
 		Password    string                `json:"password" form:"password" binding:"required,min=8"`
-		Image       *multipart.FileHeader `json:"image" form:"image"`
+		Image       *multipart.FileHeader `json:"-" form:"image" swaggerignore:"true"`
 	}
 
 	// UserResponse represents the structure for user data returned in API responses.
