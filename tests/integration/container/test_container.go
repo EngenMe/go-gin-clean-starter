@@ -28,13 +28,13 @@ func StartTestContainer() (*TestDatabaseContainer, error) {
 		Image:        "postgres:13-alpine",
 		ExposedPorts: []string{"5432/tcp"},
 		Env: map[string]string{
-			"POSTGRES_USER":     "testuser",
-			"POSTGRES_PASSWORD": "testpassword",
-			"POSTGRES_DB":       "testdb",
+			"POSTGRES_USER":     GetEnvWithDefault("DB_USER", "testuser"),
+			"POSTGRES_PASSWORD": GetEnvWithDefault("DB_PASS", "testpassword"),
+			"POSTGRES_DB":       GetEnvWithDefault("DB_NAME", "testdb"),
 		},
 		WaitingFor: wait.ForLog("database system is ready to accept connections").
 			WithOccurrence(2).
-			WithStartupTimeout(30 * time.Second),
+			WithStartupTimeout(60 * time.Second),
 	}
 
 	container, err := testcontainers.GenericContainer(
